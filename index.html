@@ -754,13 +754,14 @@
                                         <th>KELAS</th>
                                         <th>PROGRAM MINAT</th>
                                         <th>STATUS</th>
-                                        <th>CATATAN TERAKHIR</th>
                                         <th>TANGGAL FOLLOW UP</th>
+                                        <th>TANGGAL DAFTAR</th>
+                                        <th>CATATAN</th>
                                         ${isAdmin ? '<th class="col-aksi">AKSI</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAdmin ? '9' : '8'}" class="p-10 text-center text-gray-400">Tidak ada data untuk ditampilkan.</td></tr>` : 
+                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAdmin ? '10' : '9'}" class="p-10 text-center text-gray-400">Tidak ada data untuk ditampilkan.</td></tr>` : 
                                       leadsDataFiltered.map((lead, idx) => {
                                         let statusTampil = lead.status_crm === 'Deal' ? 'Closing' : (lead.status_crm || 'Pending');
                                         const programTampil = lead.status_crm === 'Deal' ? (lead.program_pendidikan || lead.program) : lead.program;
@@ -780,10 +781,13 @@
                                                     ${statusTampil}
                                                 </span>
                                             </td>
-                                            <td class="p-3 text-[10px] italic text-slate-500 allow-wrap leading-relaxed">${lead.catatan_crm || '-'}</td>
-                                            <td class="p-3 text-center font-mono text-[10px] font-black ${isOverdue(lead.tgl_followup) ? 'text-rose-600 bg-rose-50 rounded-lg' : 'text-slate-600'}">
+                                            <td class="p-3 text-center font-mono text-[10px] font-black ${lead.tgl_followup && isOverdue(lead.tgl_followup) ? 'text-rose-600 bg-rose-50 rounded-lg' : 'text-slate-600'}">
                                                 ${lead.tgl_followup ? formatTanggal(lead.tgl_followup) : '-'}
                                             </td>
+                                            <td class="p-3 text-center font-mono text-[10px] text-slate-600">
+                                                ${lead.status_crm === 'Deal' ? formatTanggal(lead.tanggal_input || lead.createdAt) : '-'}
+                                            </td>
+                                            <td class="p-3 text-[10px] italic text-slate-500 allow-wrap leading-relaxed">${lead.catatan_crm || '-'}</td>
                                             ${isAdmin ? `
                                             <td class="p-3 text-center">
                                                 <button onclick="showUpdateCRMForm('${lead.__backendId}')" class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-black hover:bg-blue-600 hover:text-white transition-all text-[9px] uppercase shadow-sm">
@@ -1053,7 +1057,7 @@
 
                         <div id="section-catatan-standard" class="space-y-4">
                             <div class="text-left">
-                                <label id="lbl-tgl-crm" class="text-xs font-bold text-gray-500 uppercase">TANGGAL FOLLOW UP</label>
+                                <label id="lbl-tgl-crm" class="text-xs font-bold text-gray-500 uppercase">${lead.status_crm === 'Deal' ? 'TANGGAL DAFTAR' : 'TANGGAL FOLLOW UP'}</label>
                                 <input type="date" id="crm-date" value="${lead.tgl_followup || ''}" class="w-full p-2 border rounded border-blue-300 outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div class="text-left">
@@ -1077,10 +1081,14 @@
         function toggleBiayaInput() {
             const status = document.getElementById('crm-status').value;
             const section = document.getElementById('section-biaya-deal');
+            const labelTgl = document.getElementById('lbl-tgl-crm');
+            
             if (status === 'Deal') {
                 section.classList.remove('hidden');
+                if (labelTgl) labelTgl.textContent = 'TANGGAL DAFTAR';
             } else {
                 section.classList.add('hidden');
+                if (labelTgl) labelTgl.textContent = 'TANGGAL FOLLOW UP';
             }
         }
 
@@ -1133,7 +1141,7 @@
                         no_tlp_ortu: leadData.no_tlp_ortu || '-', 
                         biaya_pendidikan: biayaRaw,
                         sisa_angsuran: sisaHitung.toString(),
-                        createdAt: leadData.createdAt || new Date().toISOString()
+                        createdAt: tgl ? new Date(tgl).toISOString() : new Date().toISOString()
                     };
 
                     await window.dataSdk.create(payloadSiswa);
@@ -2851,7 +2859,7 @@
                             </div>
                             <div class="text-left">
                                 <label class="block text-sm font-bold mb-1">Alamat</label>
-                                <textarea name="alamat" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 h-[42px] font-['Poppins']">${isEdit ? editData.alamat : ''}</textarea>
+                                <input type="text" name="alamat" value="${isEdit ? editData.alamat : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                             </div>
                         </div>
 
@@ -2918,6 +2926,8 @@
                 payload.wilayah = location;
                 payload.platform_medsos = selectedPlatforms;
                 payload.info_villa_merah_dari = selectedInfo;
+                // Kosongkan tanggal follow up secara eksplisit untuk record baru
+                if (!isEdit) payload.tgl_followup = "";
                 payload.createdAt = tglLeads ? new Date(tglLeads).toISOString() : new Date().toISOString();
 
                 let result;
