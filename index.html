@@ -957,29 +957,23 @@
                 }
             });
 
-            // 5. Daily Tren
+            // 5. Daily Tren (BATANG VERTIKAL)
             new Chart(document.getElementById('chart-crm-daily'), {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: stats.daily.labels,
                     datasets: [
                         {
                             label: 'Leads Masuk',
                             data: stats.daily.leads,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 4
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
                         },
                         {
                             label: 'Closing',
                             data: stats.daily.closing,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 4
+                            backgroundColor: '#10b981',
+                            borderRadius: 4
                         }
                     ]
                 },
@@ -1040,7 +1034,7 @@
                         <div id="section-biaya-deal" class="hidden space-y-4 p-3 bg-green-50 rounded-lg border border-green-200">
                             <div class="text-left">
                                 <label class="text-xs font-bold text-green-700 uppercase">Program Pendidikan (Wajib)</label>
-                                <select id="crm-program-siswa" class="w-full p-2 border border-green-300 rounded outline-none focus:ring-2 focus:ring-green-400">
+                                <select id="crm-program-siswa" class="w-full p-2 border border-green-300 rounded outline-none focus:ring-2 focus:ring-blue-400">
                                     <option value="">Pilih Program Kelas</option>
                                     ${listProgramSiswa.map(prog => `<option value="${prog}">${prog}</option>`).join('')}
                                 </select>
@@ -2247,7 +2241,7 @@
             const totalOmsetGap = totalTgtOmset - totalRelOmset;
 
             content.innerHTML = `
-                <div class="bg-white rounded-lg p-6 shadow-xl border border-blue-200 font-['Poppins']">
+                <div class="bg-white rounded-lg p-6 shadow-xl max-w-full mx-auto border border-blue-200 font-['Poppins']">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <div>
                             <h2 class="text-2xl font-bold text-blue-600 flex items-center gap-2">
@@ -2385,7 +2379,7 @@
                                             <td class="p-2 text-center text-xs sticky right-0 bg-white col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">
                                                 <div class="flex flex-row justify-center gap-2 items-center">
                                                     <button onclick="showEditTargetPeraihanForm('${row.id}')" class="text-blue-600 font-bold hover:text-blue-800 uppercase text-[9px]">EDIT</button>
-                                                    <button onclick="deleteData('${row.id}')" class="text-red-600 font-bold hover:text-red-700 font-bold uppercase text-[9px]">HAPUS</button>
+                                                    <button onclick="deleteData('${row.id}')" class="text-red-600 hover:text-red-700 font-bold uppercase text-[9px]">HAPUS</button>
                                                 </div>
                                             </td>` : ''}
                                         </tr>
