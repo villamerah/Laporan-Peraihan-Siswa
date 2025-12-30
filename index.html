@@ -176,7 +176,7 @@
         const daftarSumberInfo = ["Instagram", "TikTok", "Facebook", "Twitter", "YouTube", "Brosur", "Poster", "Iklan Medsos", "Website", "Browsing", "Saudara", "Alumni VM", "Guru", "Orang Tua", "Teman", "Lainnya"];
 
         let selectedProgramFilter = 'all';
-        let selectedYearFilter = 'all'; 
+        let selectedYearFilter = '2026'; // Default diatur ke 2026 karena opsi "Semua" dihapus
         let selectedMonthFilter = (new Date().getMonth() + 1).toString(); 
         let selectedLocationFilter = 'all'; 
         let selectedStatusFilter = 'all'; 
@@ -473,7 +473,7 @@
         let currentModule = 'dashboard';
         let currentSubModule = '';
         let charts = {};
-        let selectedYear = 'all';
+        let selectedYear = '2026';
         
         const menuItems = [
             { id: 'dashboard', name: 'Dashboard', icon: 'dashboard' },
@@ -571,11 +571,11 @@
             const currentSystemYear = new Date().getFullYear();
             const defaultStartYear = "2026";
             
-            if (module === 'crm-followup' || module === 'target-peraihan') {
+            if (module === 'crm-followup' || module === 'target-peraihan' || module === 'dashboard' || module === 'data-siswa' || module === 'data-leads') {
                 selectedYearFilter = (currentSystemYear < 2026 ? defaultStartYear : currentSystemYear.toString());
                 selectedMonthFilter = (new Date().getMonth() + 1).toString();
             } else {
-                selectedYearFilter = 'all';
+                selectedYearFilter = defaultStartYear;
                 selectedMonthFilter = 'all';
             }
             
@@ -675,7 +675,6 @@
                                 ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                             </select>
                             <select id="year-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
                                 ${generateYearOptionsForFilter(selectedYearFilter)}
                             </select>
                         </div>
@@ -1190,7 +1189,6 @@
                     </div>
                     <select id="filter-tahun-dashboard" onchange="filterDashboardByYear()" 
                             class="px-4 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                        <option value="all" ${selectedYear === 'all' ? 'selected' : ''}>Semua Tahun</option>
                         ${generateYearOptions()}
                     </select>
                 </div>
@@ -1848,7 +1846,6 @@
                             <div class="flex items-center gap-2">
                                 <select id="year-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
@@ -2291,7 +2288,6 @@
                             <div class="flex items-center gap-2">
                                 <select id="year-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
@@ -2854,7 +2850,6 @@
                             <div class="flex items-center gap-2">
                                 <select id="year-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
