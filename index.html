@@ -244,7 +244,7 @@
         };
 
         let userDatabase = JSON.parse(localStorage.getItem('vmi_users')) || [
-            { id: '1', username: 'admin', password: '123', role: 'admin', name: 'Super Admin' }
+            { id: '1', username: 'admin', password: '123', role: 'super admin', name: 'Super Admin' }
         ];
         let currentUser = JSON.parse(localStorage.getItem('vmi_user')) || null;
 
@@ -324,11 +324,14 @@
                                         <td class="p-3 uppercase font-bold text-left">${u.name}</td>
                                         <td class="p-3">${u.username}</td>
                                         <td class="p-3 text-gray-400 font-mono">${u.password}</td>
-                                        <td class="p-3 uppercase text-xs font-bold ${u.role==='admin'?'text-red-600':'text-green-600'}">${u.role}</td>
+                                        <td class="p-3 uppercase text-xs font-bold ${u.role==='admin'||u.role==='super admin'?'text-red-600':'text-green-600'}">${u.role}</td>
                                         <td class="p-3 text-center">
                                             <div class="flex flex-row justify-center gap-3">
-                                                <button onclick="showEditUserForm('${u.id}')" class="text-blue-600 font-bold hover:underline uppercase text-[11px]">EDIT</button>
-                                                ${u.id !== '1' ? `<button onclick="deleteUser('${u.id}')" class="text-red-600 font-bold hover:underline uppercase text-[11px]">HAPUS</button>` : '-'}
+                                                ${(currentUser.role === 'admin' && (u.role === 'super admin' || u.id === currentUser.id)) 
+                                                    ? '<span class="text-gray-400 text-[10px] font-bold">TERKUNCI</span>' 
+                                                    : `<button onclick="showEditUserForm('${u.id}')" class="text-blue-600 font-bold hover:underline uppercase text-[11px]">EDIT</button>`
+                                                }
+                                                ${(u.id !== '1' && u.role !== 'super admin' && u.id !== currentUser.id && !(currentUser.role === 'admin' && u.role === 'super admin')) ? `<button onclick="deleteUser('${u.id}')" class="text-red-600 font-bold hover:underline uppercase text-[11px]">HAPUS</button>` : (u.id === '1' || u.role === 'super admin' || u.id === currentUser.id ? '-' : '')}
                                             </div>
                                         </td>
                                     </tr>`).join('')}
@@ -350,32 +353,38 @@
         function renderUserForm(editData = null) {
             const isEdit = !!editData;
             const content = document.getElementById('main-content');
+            
+            // LOGIKA: Admin tidak boleh edit detail Super Admin atau dirinya sendiri di modul ini
+            const isRestricted = currentUser.role === 'admin' && editData && (editData.role === 'super admin' || editData.id === currentUser.id);
+
             content.innerHTML = `
                 <div class="bg-white p-6 rounded-lg shadow-xl max-md mx-auto border border-blue-200">
                     <h2 class="text-xl font-bold mb-4 text-blue-600">${isEdit ? 'Edit User' : 'Tambah User Baru'}</h2>
+                    ${isRestricted ? '<p class="text-red-500 text-[10px] mb-4 font-black uppercase tracking-widest">Akses Terbatas: Admin tidak dapat mengubah data Super Admin atau datanya sendiri di sini.</p>' : ''}
                     <div class="space-y-4">
                         <input type="hidden" id="n-id" value="${isEdit ? editData.id : ''}">
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Nama Lengkap</label>
-                            <input type="text" id="n-name" value="${isEdit ? editData.name : ''}" placeholder="Nama Lengkap" class="w-full p-2 border rounded">
+                            <input type="text" id="n-name" value="${isEdit ? editData.name : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Nama Lengkap" class="w-full p-2 border rounded">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Username</label>
-                            <input type="text" id="n-user" value="${isEdit ? editData.username : ''}" placeholder="Username" class="w-full p-2 border rounded">
+                            <input type="text" id="n-user" value="${isEdit ? editData.username : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Username" class="w-full p-2 border rounded">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
-                            <input type="text" id="n-pass" value="${isEdit ? editData.password : ''}" placeholder="Password" class="w-full p-2 border rounded">
+                            <input type="text" id="n-pass" value="${isEdit ? editData.password : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Password" class="w-full p-2 border rounded">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Role</label>
-                            <select id="n-role" class="w-full p-2 border rounded">
+                            <select id="n-role" ${isRestricted ? 'disabled' : ''} class="w-full p-2 border rounded">
                                 <option value="user" ${isEdit && editData.role === 'user' ? 'selected' : ''}>User</option>
-                                <option value="admin" ${isEdit && editData.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                ${currentUser.role === 'super admin' ? `<option value="admin" ${isEdit && editData.role === 'admin' ? 'selected' : ''}>Admin</option>` : ''}
+                                ${currentUser.role === 'super admin' ? `<option value="super admin" ${isEdit && editData.role === 'super admin' ? 'selected' : ''}>Super Admin</option>` : ''}
                             </select>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="saveUser()" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 font-bold">SIMPAN</button>
+                            ${!isRestricted ? `<button onclick="saveUser()" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 font-bold">SIMPAN</button>` : ''}
                             <button onclick="renderManajemenUser()" class="bg-gray-400 text-white px-4 py-2 rounded flex-1 font-bold">BATAL</button>
                         </div>
                     </div>
@@ -391,9 +400,21 @@
 
             if (id) {
                 const idx = userDatabase.findIndex(u => u.id === id);
-                if (idx !== -1) userDatabase[idx] = { id, name, username, password, role };
-                saveLog(`Mengubah detail user: ${name}`);
+                if (idx !== -1) {
+                    // PROTEKSI SISI LOGIKA: Admin dilarang edit Super Admin atau datanya sendiri
+                    if (currentUser.role === 'admin' && (userDatabase[idx].role === 'super admin' || userDatabase[idx].id === currentUser.id)) {
+                        alert('Gagal: Otoritas tidak mencukupi untuk mengubah data ini!');
+                        return;
+                    }
+                    userDatabase[idx] = { id, name, username, password, role };
+                    saveLog(`Mengubah detail user: ${name}`);
+                }
             } else {
+                // PROTEKSI: Admin tidak boleh buat Super Admin atau Admin
+                if (currentUser.role === 'admin' && (role === 'super admin' || role === 'admin')) {
+                    alert('Gagal: Admin hanya diizinkan membuat role User!');
+                    return;
+                }
                 userDatabase.push({ id: Date.now().toString(), name, username, password, role });
                 saveLog(`Menambah user baru: ${name}`);
             }
@@ -404,6 +425,14 @@
 
         function deleteUser(id) {
             const u = userDatabase.find(x => x.id === id);
+            if (!u) return;
+
+            // PROTEKSI: Admin dilarang hapus Super Admin atau dirinya sendiri
+            if (currentUser.role === 'admin' && (u.role === 'super admin' || u.id === currentUser.id)) {
+                alert('Akses Ditolak: Otoritas tidak mencukupi untuk menghapus akun ini!');
+                return;
+            }
+
             if(confirm('Hapus user ini?')) {
                 saveLog(`Menghapus user: ${u ? u.name : 'Unknown'}`);
                 userDatabase = userDatabase.filter(u => u.id !== id);
@@ -441,7 +470,7 @@
                                     <tr class="border-b hover:bg-blue-50">
                                         <td class="p-3 text-center font-mono">${idx + 1}</td>
                                         <td class="p-3 font-bold uppercase text-left">${log.userName}</td>
-                                        <td class="p-3 uppercase text-[10px] font-bold ${log.role==='admin'?'text-red-600':'text-green-600'}">${log.role}</td>
+                                        <td class="p-3 uppercase text-[10px] font-bold ${log.role==='admin'||log.role==='super admin'?'text-red-600':'text-green-600'}">${log.role}</td>
                                         <td class="p-3 italic text-gray-600 text-left">${log.action}</td>
                                         <td class="p-3 text-center">${log.date}</td>
                                         <td class="p-3 text-center">${log.day}</td>
@@ -528,7 +557,7 @@
             const nav = document.getElementById('sidebar-nav');
             let visibleMenu = menuItems.filter(item => {
                 if (item.adminOnly) {
-                    return currentUser.id === '1'; 
+                    return currentUser.role === 'admin' || currentUser.role === 'super admin'; 
                 }
                 return true;
             });
@@ -586,7 +615,7 @@
         function renderContent() {
             if (!currentUser) { renderLoginForm(); return; }
             
-            if ((currentModule === 'manajemen-user' || currentModule === 'log-activity') && currentUser.id !== '1') {
+            if ((currentModule === 'manajemen-user' || currentModule === 'log-activity') && (currentUser.role !== 'admin' && currentUser.role !== 'super admin')) {
                 navigateTo('dashboard');
                 return;
             }
@@ -653,7 +682,7 @@
             else if (conversionRate >= 10) colorClass = "text-amber-500";
 
             const stats = getCRMStatistics(leadsDataFiltered);
-            const isAdmin = currentUser.role === 'admin';
+            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const allPrograms = getLeadsProgramsList();
             const content = document.getElementById('main-content');
 
@@ -1109,20 +1138,21 @@
             const leadData = currentData.find(d => d.__backendId === backendId);
 
             if (status === 'Deal') {
-                await window.dataSdk.update(backendId, {
-                    status_crm: 'Deal',
-                    tanggal_closing: tglAction, 
-                    catatan_crm: catatan,
-                    program_pendidikan: programDeal,
-                    is_closing: true 
-                });
-
-                const isDouble = currentData.some(d => d.module === 'data-siswa' && d.nama.toUpperCase() === leadData.nama_siswa.toUpperCase());
+                const isAlreadyConverted = currentData.some(d => d.module === 'data-siswa' && d.fromLeadsId === backendId);
                 
-                if (!isDouble) {
+                if (!isAlreadyConverted) {
+                    await window.dataSdk.update(backendId, {
+                        status_crm: 'Deal',
+                        tanggal_closing: tglAction, 
+                        catatan_crm: catatan,
+                        program_pendidikan: programDeal,
+                        is_closing: true 
+                    });
+
                     const payloadSiswa = {
                         module: 'data-siswa',
                         location: leadData.wilayah,
+                        fromLeadsId: backendId, 
                         nama: leadData.nama_siswa,
                         ttl: leadData.ttl || '-',
                         no_hp_siswa: leadData.no_hp,
@@ -1141,8 +1171,10 @@
                         createdAt: tglAction ? new Date(tglAction).toISOString() : new Date().toISOString()
                     };
                     await window.dataSdk.create(payloadSiswa);
+                    alert('Status CLOSING Berhasil!');
+                } else {
+                    alert('Data ini sudah pernah dikonversi menjadi siswa.');
                 }
-                alert('Status CLOSING Berhasil!');
             } else {
                 await window.dataSdk.update(backendId, {
                     status_crm: status,
@@ -1818,7 +1850,7 @@
                 });
             }
             
-            const isAdmin = currentUser.role === 'admin';
+            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const content = document.getElementById('main-content');
             
             content.innerHTML = `
@@ -2181,7 +2213,7 @@
         }
         
         async function deleteData(backendId) {
-            if (currentUser.role !== 'admin') { alert('Hanya Admin!'); return; }
+            if (currentUser.role !== 'admin' && currentUser.role !== 'super admin') { alert('Hanya Admin!'); return; }
             const record = currentData.find(d => d.__backendId === backendId);
             if (!record) return;
             
@@ -2215,7 +2247,7 @@
                 filteredSiswaData = filteredSiswaData.filter(d => (new Date(d.createdAt).getMonth() + 1) == selectedMonthFilter);
             }
 
-            const isAdmin = currentUser.role === 'admin';
+            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const chartData = generateTargetPeraihanChartData(filteredTargetData, selectedProgramFilter, location);
             const olapSiswaData = generateOLAPFromData(filteredSiswaData);
             
@@ -2237,7 +2269,6 @@
             const totalSiswaGap = totalTgtSiswa - totalRelSiswa;
             const totalOmsetGap = totalTgtOmset - totalRelOmset;
 
-            // LOGIKA KONDISI GRAFIK HARIAN (SINKRONISASI DATA SISWA & OMSET)
             const showDailyChart = selectedMonthFilter !== 'all' && selectedYearFilter !== 'all';
             let dailySiswaStats = null;
             if (showDailyChart) {
@@ -2461,14 +2492,14 @@
                         {
                             label: 'Siswa Baru (Closing)',
                             data: stats.closing,
-                            backgroundColor: '#10b981', // Hijau
+                            backgroundColor: '#10b981', 
                             borderRadius: 4,
                             yAxisID: 'y'
                         },
                         {
                             label: 'Omset Harian (Rp)',
                             data: stats.omset,
-                            backgroundColor: '#3b82f6', // Biru
+                            backgroundColor: '#3b82f6', 
                             borderRadius: 4,
                             yAxisID: 'y1'
                         }
@@ -2531,35 +2562,45 @@
         function generateTargetPeraihanChartData(filteredTargetData, programFilter, currentLoc) {
             const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             const aggregation = {};
-            let totalTargetSiswa = 0, totalRealisasiSiswa = 0, totalTargetOmset = 0, totalRealisasiOmset = 0, totalSisaAngsuran = 0;
+            let totalTargetSiswa = 0, totalRealisasiSiswa = 0, totalTargetOmset = 0, totalRealisasiOmset = 0;
 
             filteredTargetData.forEach(item => {
                 const key = `${item.bulan}-${item.tahun}`;
                 if (!aggregation[key]) {
                     aggregation[key] = { 
-                        bulan: item.bulan, tahun: item.tahun, 
-                        targetSiswa: 0, realSiswa: 0, targetOmset: 0, realOmset: 0, ids: []
+                        bulan: parseInt(item.bulan), 
+                        tahun: parseInt(item.tahun), 
+                        targetSiswa: 0, 
+                        realSiswa: 0, 
+                        targetOmset: 0, 
+                        realOmset: 0, 
+                        ids: [] 
                     };
                 }
+                aggregation[key].targetSiswa += (parseInt(item.target_siswa) || 0);
+                aggregation[key].targetOmset += (parseFloat(item.target_omset) || 0);
+                aggregation[key].ids.push(item.__backendId);
+            });
 
-                const realSiswaList = currentData.filter(s => {
-                    if (s.module !== 'data-siswa' || s.location !== currentLoc) return false;
-                    if (selectedProgramFilter !== 'all' && s.program !== selectedProgramFilter) return false;
-                    const d = new Date(s.createdAt);
-                    return (d.getMonth() + 1) == item.bulan && d.getFullYear() == item.tahun;
+            const allSiswa = currentData.filter(d => d.module === 'data-siswa' && d.location === currentLoc);
+
+            Object.keys(aggregation).forEach(key => {
+                const data = aggregation[key];
+                
+                const realSiswaList = allSiswa.filter(s => {
+                    if (programFilter !== 'all' && s.program !== programFilter) return false;
+                    const dSiswa = new Date(s.createdAt);
+                    return (dSiswa.getMonth() + 1) == data.bulan && dSiswa.getFullYear() == data.tahun;
                 });
 
-                aggregation[key].targetSiswa += (parseInt(item.target_siswa) || 0);
-                aggregation[key].realSiswa += realSiswaList.length;
-                aggregation[key].targetOmset += (parseFloat(item.target_omset) || 0);
-                
-                const realisasiBulanIni = realSiswaList.reduce((acc, s) => acc + (parseFloat(s.biaya_pendidikan || 0) - parseFloat(s.sisa_angsuran || 0)), 0);
-                const sisaBulanIni = realSiswaList.reduce((acc, s) => acc + (parseFloat(s.sisa_angsuran || 0)), 0);
-                
-                aggregation[key].realOmset += realisasiBulanIni;
-                totalSisaAngsuran += sisaBulanIni;
-                
-                aggregation[key].ids.push(item.__backendId);
+                const uniqueSiswa = Array.from(new Map(realSiswaList.map(s => [s.nama.toLowerCase(), s])).values());
+
+                data.realSiswa = uniqueSiswa.length;
+                data.realOmset = uniqueSiswa.reduce((acc, s) => {
+                    const biaya = parseFloat(s.biaya_pendidikan || 0);
+                    const sisa = parseFloat(s.sisa_angsuran || 0);
+                    return acc + (biaya - sisa);
+                }, 0);
             });
 
             const sortedKeys = Object.keys(aggregation).sort((a, b) => {
@@ -2574,7 +2615,7 @@
                 labels.push(`${monthShort[data.bulan - 1]}`);
                 targetSiswaData.push(data.targetSiswa);
                 realisasiSiswaData.push(data.realSiswa);
-                targetOmsetData.push(data.targetOmset / 1000000);
+                targetOmsetData.push(data.targetOmset / 1000000); 
                 realisasiOmsetData.push(data.realOmset / 1000000);
 
                 totalTargetSiswa += data.targetSiswa;
@@ -2599,8 +2640,7 @@
                     totalTargetSiswa, 
                     totalRealisasiSiswa, 
                     totalTargetOmsetRaw: totalTargetOmset, 
-                    totalRealisasiOmsetRaw: totalRealisasiOmset,
-                    totalSisaAngsuranRaw: totalSisaAngsuran 
+                    totalRealisasiOmsetRaw: totalRealisasiOmset
                 }
             };
         }
@@ -2817,7 +2857,7 @@
                 });
             }
 
-            const isAdmin = currentUser.role === 'admin';
+            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const content = document.getElementById('main-content');
             content.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl border border-blue-200 font-['Poppins']">
@@ -2954,9 +2994,7 @@
         function renderLeadsForm(location, editData = null) {
             const content = document.getElementById('main-content');
             const isEdit = !!editData;
-            
             const allPrograms = getLeadsProgramsList();
-            
             const tglDefaultLeads = isEdit ? new Date(editData.createdAt).toISOString().split('T')[0] : '';
 
             content.innerHTML = `
