@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="https://uploads.onecompiler.io/43yd3nkbg/43yhn3nsq/logo-2.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -157,7 +158,7 @@
     </div>
   </header>
 
-  <div class="flex flex-1 w-full overflow-hidden">
+  <div class="flex-1 overflow-hidden flex">
    <div id="sidebar-container" class="w-56 lg:w-60 xl:w-64 bg-white shadow-2xl overflow-y-auto border-r border-gray-200 hidden flex-shrink-0">
     <nav class="p-4 mt-2" id="sidebar-nav">
     </nav>
@@ -174,6 +175,24 @@
   <script>
         const daftarNamaBulan = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const daftarSumberInfo = ["Instagram", "TikTok", "Facebook", "Twitter", "YouTube", "Brosur", "Poster", "Iklan Medsos", "Website", "Browsing", "Saudara", "Alumni VM", "Guru", "Orang Tua", "Teman", "Lainnya"];
+        const daftarWilayahMaster = ["Semua", "Bandung", "Jakarta Selatan", "Jakarta Timur"];
+
+        let programDatabase = JSON.parse(localStorage.getItem('vmi_master_programs')) || [
+            'SR Advance', 'SR Platinum', 'SR Gold', 'SR Silver', 'SR Bronze', 'SR Hybrid', 'SR Beasiswa', 
+            'SR Intensif SNBP', 'SR Intensif SNBT', 'SR Intensif SNBP dan SNBT', 'SR Intensif Mandiri', 
+            'SR Intermedite', 'Minat Seni', 'Arsitektur Gold', 'Arsitektur Silver', 'Arsitektur Bronze', 
+            'Intensif USM UNPAR', 'Minat Arsitektur', 'SR Anak Jangka Panjang', 'SR Anak Jangka Pendek', 
+            'SR SMP Jangka Panjang', 'SR SMP Jangka Pendek', 'SR Gold Online JK Panjang', 'SR Gold Online JK Pendek', 
+            'SR Bronze Online', 'SR SMP Online', 'SR Beasiswa Online', 'Arsitektur Gold Online JK Panjang', 
+            'Arsitektur Gold Online JK Pendek', 'Arsitektur Silver Online', 'SR Intensif Online SNBP', 
+            'SR Intensif Online SNBT', 'SR Intensif Online SNBP dan SNBT', 'SR Intensif Online Mandiri', 
+            'Minat Seni Online JK Panjang', 'Minat Seni Online JK Pendek', 'Minat Arsitektur Online', 
+            'Intensif IUP', 'Intensif IUP Online', 'Intensif Online USM UNPAR'
+        ];
+
+        function getAllProgramsList() {
+            return [...new Set(programDatabase)].sort();
+        }
 
         let selectedProgramFilter = 'all';
         let selectedYearFilter = 'all'; 
@@ -202,6 +221,257 @@
             activityLogs.unshift(logEntry); 
             if(activityLogs.length > 1000) activityLogs.pop(); 
             localStorage.setItem('vmi_activity_logs', JSON.stringify(activityLogs));
+        }
+
+        function openProgramManager() {
+            const modalHtml = `
+                <div id="program-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden font-['Poppins']">
+                        <div class="bg-emerald-600 p-4 flex justify-between items-center">
+                            <h3 class="text-white font-bold flex items-center gap-2">
+                                <span class="material-symbols-rounded">inventory_2</span> Manajemen Produk/Program
+                            </h3>
+                            <button onclick="closeProgramManager()" class="text-white hover:bg-emerald-700 rounded-full p-1 transition">
+                                <span class="material-symbols-rounded">close</span>
+                            </button>
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="flex gap-2 mb-6">
+                                <input type="text" id="new-program-name" placeholder="Nama program baru..." 
+                                       class="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 uppercase">
+                                <button onclick="addMasterProgram()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700 transition">
+                                    TAMBAH
+                                </button>
+                            </div>
+
+                            <div class="max-h-[400px] overflow-y-auto border border-gray-100 rounded-lg">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th class="p-3 text-left">NAMA PROGRAM</th>
+                                            <th class="p-3 text-center w-32">AKSI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        ${programDatabase.sort().map((prog, idx) => `
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="p-3 font-medium text-gray-700 uppercase">${prog}</td>
+                                                <td class="p-3">
+                                                    <div class="flex justify-center gap-4">
+                                                        <button onclick="editMasterProgram('${prog}')" class="text-blue-600 hover:underline font-bold text-xs uppercase tracking-tight">Edit</button>
+                                                        <button onclick="deleteMasterProgram('${prog}')" class="text-red-600 hover:underline font-bold text-xs uppercase tracking-tight">Hapus</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeProgramManager() {
+            document.getElementById('program-modal')?.remove();
+        }
+
+        function addMasterProgram() {
+            const input = document.getElementById('new-program-name');
+            const val = input.value.trim().toUpperCase();
+            if (val) {
+                if(programDatabase.includes(val)) return alert("Program sudah ada!");
+                programDatabase.push(val);
+                saveAndRefreshPrograms(`Menambah produk baru: ${val}`);
+                input.value = '';
+            }
+        }
+
+        function editMasterProgram(oldName) {
+            const index = programDatabase.indexOf(oldName);
+            if(index === -1) return;
+            const newVal = prompt("Ubah nama program:", oldName);
+            if (newVal && newVal.trim() !== "") {
+                const updatedName = newVal.trim().toUpperCase();
+                programDatabase[index] = updatedName;
+                saveAndRefreshPrograms(`Mengubah produk ${oldName} menjadi ${updatedName}`);
+            }
+        }
+
+        function deleteMasterProgram(name) {
+            const index = programDatabase.indexOf(name);
+            if(index === -1) return;
+            if (confirm(`Hapus program "${name}"? Perubahan ini mungkin mempengaruhi filter data lama.`)) {
+                programDatabase.splice(index, 1);
+                saveAndRefreshPrograms(`Menghapus produk: ${name}`);
+            }
+        }
+
+        function saveAndRefreshPrograms(logMsg) {
+            localStorage.setItem('vmi_master_programs', JSON.stringify(programDatabase));
+            saveLog(logMsg);
+            closeProgramManager();
+            openProgramManager();
+            renderContent();
+        }
+
+        function exportToExcel(moduleName, location) {
+            const rawData = currentData.filter(d => d.module === moduleName && (d.location === location || d.wilayah === location));
+            if (rawData.length === 0) return alert("Tidak ada data untuk diekspor");
+
+            let exportData = [];
+
+            if (moduleName === 'data-siswa') {
+                exportData = rawData.map((s, idx) => {
+                    const biaya = parseFloat(s.biaya_pendidikan) || 0;
+                    const sisa = parseFloat(s.sisa_angsuran || 0);
+                    const platform = Array.isArray(s.platform_medsos) ? s.platform_medsos.join(', ') : (s.platform_medsos || '-');
+                    const infoDari = Array.isArray(s.info_villa_merah_dari) ? s.info_villa_merah_dari.join(', ') : (s.info_villa_merah_dari || '-');
+
+                    return {
+                        "NO": idx + 1,
+                        "NAMA SISWA": s.nama,
+                        "TEMPAT TANGGAL LAHIR": s.ttl || '-',
+                        "ASAL SEKOLAH": s.asal_sekolah,
+                        "KELAS": s.kelas || '-',
+                        "ALAMAT": s.alamat_siswa || '-',
+                        "KOTA/KAB ASAL": s.asal_kota || '-',
+                        "PROGRAM": s.program,
+                        "MEDIA SOSIAL": platform,
+                        "NAMA AKUN": s.nama_medsos || '-',
+                        "INFORMASI VILLA MERAH DARI": infoDari,
+                        "HP SISWA": s.no_hp_siswa || '-',
+                        "NAMA ORTU": s.nama_ortu || '-',
+                        "HP ORTU": s.no_tlp_ortu || '-',
+                        "TANGGAL DAFTAR": formatTanggalExport(s.createdAt),
+                        "BIAYA": biaya,
+                        "PEMBAYARAN": biaya - sisa,
+                        "SISA": sisa
+                    };
+                });
+            } else if (moduleName === 'data-leads') {
+                exportData = rawData.map((l, idx) => {
+                    const platform = Array.isArray(l.platform_medsos) ? l.platform_medsos.join(', ') : (l.platform_medsos || '-');
+                    const infoDari = Array.isArray(l.info_villa_merah_dari) ? l.info_villa_merah_dari.join(', ') : (l.info_villa_merah_dari || '-');
+                    
+                    return {
+                        "NO": idx + 1,
+                        "NAMA SISWA": l.nama_siswa,
+                        "TEMPAT TANGGAL LAHIR": l.ttl || '-',
+                        "ASAL SEKOLAH": l.asal_sekolah,
+                        "KELAS": l.kelas || '-',
+                        "ALAMAT": l.alamat || '-',
+                        "KOTA/KAB ASAL": l.asal_kota || '-',
+                        "INFO PROGRAM": l.program || '-',
+                        "MEDIA SOSIAL": platform,
+                        "NAMA AKUN": l.nama_medsos || '-',
+                        "INFORMASI VILLA MERAH DARI": infoDari,
+                        "HP SISWA": l.no_hp || '-',
+                        "NAMA ORTU": l.nama_ortu || '-',
+                        "HP ORTU": l.no_tlp_ortu || '-',
+                        "TGL INPUT": formatTanggalExport(l.tanggal_input || l.createdAt)
+                    };
+                });
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+            XLSX.writeFile(workbook, `VM_${moduleName}_${location}.xlsx`);
+            saveLog(`Ekspor data ${moduleName} wilayah ${location}`);
+        }
+
+        function triggerImport(moduleName, location) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = async (event) => {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    if (confirm(`Impor ${jsonData.length} data ke ${moduleName}?`)) {
+                        jsonData.forEach(row => {
+                            let mapped = { 
+                                __backendId: Date.now().toString() + Math.random(),
+                                module: moduleName
+                            };
+
+                            if (moduleName === 'data-siswa') {
+                                mapped.location = location;
+                                mapped.nama = row["NAMA SISWA"] || '';
+                                mapped.ttl = row["TEMPAT TANGGAL LAHIR"] || '';
+                                mapped.asal_sekolah = row["ASAL SEKOLAH"] || '';
+                                mapped.kelas = row["KELAS"] || '';
+                                mapped.alamat_siswa = row["ALAMAT"] || '';
+                                mapped.asal_kota = row["KOTA/KAB ASAL"] || '';
+                                mapped.program = row["PROGRAM"] || '';
+                                mapped.platform_medsos = row["MEDIA SOSIAL"] ? row["MEDIA SOSIAL"].split(', ') : [];
+                                mapped.nama_medsos = row["NAMA AKUN"] || '';
+                                mapped.info_villa_merah_dari = row["INFORMASI VILLA MERAH DARI"] ? row["INFORMASI VILLA MERAH DARI"].split(', ') : [];
+                                mapped.no_hp_siswa = row["HP SISWA"] || '';
+                                mapped.nama_ortu = row["NAMA ORTU"] || '';
+                                mapped.no_tlp_ortu = row["HP ORTU"] || '';
+                                mapped.biaya_pendidikan = row["BIAYA"] ? row["BIAYA"].toString().replace(/\D/g,'') : '0';
+                                mapped.sisa_angsuran = row["SISA"] ? row["SISA"].toString().replace(/\D/g,'') : '0';
+                                mapped.createdAt = parseExcelDate(row["TANGGAL DAFTAR"]);
+                            } else if (moduleName === 'data-leads') {
+                                mapped.wilayah = location;
+                                mapped.nama_siswa = row["NAMA SISWA"] || '';
+                                mapped.ttl = row["TEMPAT TANGGAL LAHIR"] || '';
+                                mapped.asal_sekolah = row["ASAL SEKOLAH"] || '';
+                                mapped.kelas = row["KELAS"] || '';
+                                mapped.alamat = row["ALAMAT"] || '';
+                                mapped.asal_kota = row["KOTA/KAB ASAL"] || '';
+                                mapped.program = row["INFO PROGRAM"] || '';
+                                mapped.platform_medsos = row["MEDIA SOSIAL"] ? row["MEDIA SOSIAL"].split(', ') : [];
+                                mapped.nama_medsos = row["NAMA AKUN"] || '';
+                                mapped.info_villa_merah_dari = row["INFORMASI VILLA MERAH DARI"] ? row["INFORMASI VILLA MERAH DARI"].split(', ') : [];
+                                mapped.no_hp = row["HP SISWA"] || '';
+                                mapped.nama_ortu = row["NAMA ORTU"] || '';
+                                mapped.no_tlp_ortu = row["HP ORTU"] || '';
+                                mapped.createdAt = parseExcelDate(row["TGL INPUT"]);
+                                mapped.tanggal_input = mapped.createdAt;
+                            }
+                            currentData.push(mapped);
+                        });
+                        
+                        localStorage.setItem('vmi_app_data', JSON.stringify(currentData));
+                        saveLog(`Berhasil impor ${jsonData.length} data ${moduleName}`);
+                        alert("Data Berhasil Diimpor Sesuai Kolom Tabel!");
+                        renderContent();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
+        }
+
+        function parseExcelDate(dateVal) {
+            if (!dateVal || dateVal === '-') return new Date().toISOString();
+            if (!isNaN(dateVal)) { // Serial Excel
+                return new Date((dateVal - 25569) * 86400 * 1000).toISOString();
+            }
+            const parts = dateVal.toString().split('/');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]).toISOString();
+            }
+            return new Date(dateVal).toISOString();
+        }
+
+        function formatTanggalExport(dateStr) {
+            if (!dateStr || dateStr === '-') return '-';
+            const d = new Date(dateStr);
+            return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
 
         window.dataSdk = {
@@ -244,7 +514,7 @@
         };
 
         let userDatabase = JSON.parse(localStorage.getItem('vmi_users')) || [
-            { id: '1', username: 'admin', password: '123', role: 'super admin', name: 'Super Admin' }
+            { id: '1', username: 'admin', password: '123', role: 'super admin', name: 'Super Admin', wilayah: 'Semua' }
         ];
         let currentUser = JSON.parse(localStorage.getItem('vmi_user')) || null;
 
@@ -270,6 +540,17 @@
             }
         }
 
+        function handleForgotPassword() {
+            const username = prompt("Masukkan Username Anda untuk instruksi pemulihan:");
+            if (!username) return;
+            const user = userDatabase.find(x => x.username === username.toLowerCase());
+            if (user) {
+                alert(`Halo ${user.name},\n\nUntuk keamanan, silakan hubungi SUPER ADMIN untuk mereset password Anda.\n\nSebutkan ID User Anda: ${user.id}`);
+            } else {
+                alert("Username tidak ditemukan dalam sistem.");
+            }
+        }
+
         function renderLoginForm() {
             document.getElementById('top-header').classList.add('hidden');
             document.getElementById('sidebar-container').classList.add('hidden');
@@ -290,6 +571,9 @@
                             <input type="text" id="log-user" placeholder="Username" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
                             <input type="password" id="log-pass" placeholder="Password" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
                             <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">MASUK</button>
+                            <div class="text-center mt-4">
+                                <button onclick="handleForgotPassword()" class="text-xs font-bold text-blue-500 hover:text-blue-700 uppercase tracking-tighter">Lupa Password?</button>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -314,27 +598,39 @@
                                     <th>USERNAME</th>
                                     <th>PASSWORD</th>
                                     <th>ROLE</th>
+                                    <th>WILAYAH</th>
                                     <th class="col-aksi">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${userDatabase.map((u, idx) => `
+                                ${userDatabase.map((u, idx) => {
+                                    let isProtected = false;
+                                    
+                                    // Logika Proteksi: Admin tidak bisa edit Admin (termasuk dirinya) dan Super Admin
+                                    if (currentUser.role === 'admin') {
+                                        if (u.role === 'super admin' || u.role === 'admin') {
+                                            isProtected = true;
+                                        }
+                                    }
+
+                                    return `
                                     <tr class="border-b">
                                         <td class="p-3 text-center font-mono">${idx + 1}</td>
                                         <td class="p-3 uppercase font-bold text-left">${u.name}</td>
                                         <td class="p-3">${u.username}</td>
                                         <td class="p-3 text-gray-400 font-mono">${u.password}</td>
                                         <td class="p-3 uppercase text-xs font-bold ${u.role==='admin'||u.role==='super admin'?'text-red-600':'text-green-600'}">${u.role}</td>
+                                        <td class="p-3 uppercase text-xs font-bold text-blue-600">${u.wilayah || 'Semua'}</td>
                                         <td class="p-3 text-center">
                                             <div class="flex flex-row justify-center gap-3">
-                                                ${(currentUser.role === 'admin' && (u.role === 'super admin' || u.id === currentUser.id)) 
+                                                ${isProtected 
                                                     ? '<span class="text-gray-400 text-[10px] font-bold">TERKUNCI</span>' 
-                                                    : `<button onclick="showEditUserForm('${u.id}')" class="text-blue-600 font-bold hover:underline uppercase text-[11px]">EDIT</button>`
+                                                    : `<button onclick="showEditUserForm('${u.id}')" class="text-blue-600 font-bold hover:underline uppercase text-[11px]">EDIT</button>
+                                                       ${(u.id !== '1' && u.id !== currentUser.id) ? `<button onclick="deleteUser('${u.id}')" class="text-red-600 font-bold hover:underline uppercase text-[11px]">HAPUS</button>` : '-'}`
                                                 }
-                                                ${(u.id !== '1' && u.role !== 'super admin' && u.id !== currentUser.id && !(currentUser.role === 'admin' && u.role === 'super admin')) ? `<button onclick="deleteUser('${u.id}')" class="text-red-600 font-bold hover:underline uppercase text-[11px]">HAPUS</button>` : (u.id === '1' || u.role === 'super admin' || u.id === currentUser.id ? '-' : '')}
                                             </div>
                                         </td>
-                                    </tr>`).join('')}
+                                    </tr>`}).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -354,13 +650,23 @@
             const isEdit = !!editData;
             const content = document.getElementById('main-content');
             
-            // LOGIKA: Admin tidak boleh edit detail Super Admin atau dirinya sendiri di modul ini
-            const isRestricted = currentUser.role === 'admin' && editData && (editData.role === 'super admin' || editData.id === currentUser.id);
+            let isRestricted = false;
+            
+            // Proteksi di level Form: Admin tidak bisa edit Admin (termasuk dirinya) dan Super Admin
+            if (currentUser.role === 'admin' && editData) {
+                if (editData.role === 'super admin' || editData.role === 'admin') {
+                    isRestricted = true;
+                }
+            }
+
+            // Default tampilan wilayah (sembunyi jika role user)
+            const initialRole = isEdit ? editData.role : 'user';
+            const hideWilayahClass = initialRole === 'user' ? 'hidden' : '';
 
             content.innerHTML = `
                 <div class="bg-white p-6 rounded-lg shadow-xl max-md mx-auto border border-blue-200">
                     <h2 class="text-xl font-bold mb-4 text-blue-600">${isEdit ? 'Edit User' : 'Tambah User Baru'}</h2>
-                    ${isRestricted ? '<p class="text-red-500 text-[10px] mb-4 font-black uppercase tracking-widest">Akses Terbatas: Admin tidak dapat mengubah data Super Admin atau datanya sendiri di sini.</p>' : ''}
+                    ${isRestricted ? '<p class="text-red-500 text-[10px] mb-4 font-black uppercase tracking-widest">Akses Terbatas: Admin tidak dapat mengubah data Admin lain atau data Pribadi di sini.</p>' : ''}
                     <div class="space-y-4">
                         <input type="hidden" id="n-id" value="${isEdit ? editData.id : ''}">
                         <div>
@@ -375,13 +681,23 @@
                             <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
                             <input type="text" id="n-pass" value="${isEdit ? editData.password : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Password" class="w-full p-2 border rounded">
                         </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-500 uppercase">Role</label>
-                            <select id="n-role" ${isRestricted ? 'disabled' : ''} class="w-full p-2 border rounded">
-                                <option value="user" ${isEdit && editData.role === 'user' ? 'selected' : ''}>User</option>
-                                ${currentUser.role === 'super admin' ? `<option value="admin" ${isEdit && editData.role === 'admin' ? 'selected' : ''}>Admin</option>` : ''}
-                                ${currentUser.role === 'super admin' ? `<option value="super admin" ${isEdit && editData.role === 'super admin' ? 'selected' : ''}>Super Admin</option>` : ''}
-                            </select>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Role</label>
+                                <select id="n-role" ${isRestricted ? 'disabled' : ''} onchange="toggleWilayahInput()" class="w-full p-2 border rounded">
+                                    <option value="user" ${isEdit && editData.role === 'user' ? 'selected' : ''}>User (Viewer)</option>
+                                    ${currentUser.role === 'super admin' ? `
+                                        <option value="admin" ${isEdit && editData.role === 'admin' ? 'selected' : ''}>Admin (Editor Cabang)</option>
+                                        <option value="super admin" ${isEdit && editData.role === 'super admin' ? 'selected' : ''}>Super Admin</option>
+                                    ` : ''}
+                                </select>
+                            </div>
+                            <div id="container-wilayah" class="${hideWilayahClass}">
+                                <label class="text-xs font-bold text-gray-500 uppercase">Wilayah Tugas</label>
+                                <select id="n-wilayah" ${isRestricted ? 'disabled' : ''} class="w-full p-2 border rounded">
+                                    ${daftarWilayahMaster.map(w => `<option value="${w}" ${isEdit && editData.wilayah === w ? 'selected' : ''}>${w}</option>`).join('')}
+                                </select>
+                            </div>
                         </div>
                         <div class="flex gap-2">
                             ${!isRestricted ? `<button onclick="saveUser()" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 font-bold">SIMPAN</button>` : ''}
@@ -391,31 +707,49 @@
                 </div>`;
         }
 
+        // Fungsi kontrol show/hide wilayah di Manajemen User
+        function toggleWilayahInput() {
+            const role = document.getElementById('n-role').value;
+            const container = document.getElementById('container-wilayah');
+            const wilayahSelect = document.getElementById('n-wilayah');
+
+            if (role === 'user') {
+                container.classList.add('hidden');
+                wilayahSelect.value = 'Semua'; 
+            } else {
+                container.classList.remove('hidden');
+            }
+        }
+
         function saveUser() {
             const id = document.getElementById('n-id').value;
             const name = document.getElementById('n-name').value;
             const username = document.getElementById('n-user').value;
             const password = document.getElementById('n-pass').value;
             const role = document.getElementById('n-role').value;
+            const wilayah = document.getElementById('n-wilayah').value;
 
             if (id) {
                 const idx = userDatabase.findIndex(u => u.id === id);
                 if (idx !== -1) {
-                    // PROTEKSI SISI LOGIKA: Admin dilarang edit Super Admin atau datanya sendiri
-                    if (currentUser.role === 'admin' && (userDatabase[idx].role === 'super admin' || userDatabase[idx].id === currentUser.id)) {
-                        alert('Gagal: Otoritas tidak mencukupi untuk mengubah data ini!');
+                    if (currentUser.role === 'admin' && (userDatabase[idx].role === 'super admin' || userDatabase[idx].role === 'admin')) {
+                        alert('Gagal: Otoritas tidak mencukupi untuk mengubah data Admin/Super Admin!');
                         return;
                     }
-                    userDatabase[idx] = { id, name, username, password, role };
+                    userDatabase[idx] = { id, name, username, password, role, wilayah };
                     saveLog(`Mengubah detail user: ${name}`);
+                    
+                    if (id === currentUser.id) {
+                        currentUser = userDatabase[idx];
+                        localStorage.setItem('vmi_user', JSON.stringify(currentUser));
+                    }
                 }
             } else {
-                // PROTEKSI: Admin tidak boleh buat Super Admin atau Admin
-                if (currentUser.role === 'admin' && (role === 'super admin' || role === 'admin')) {
-                    alert('Gagal: Admin hanya diizinkan membuat role User!');
+                if (currentUser.role === 'admin' && role !== 'user') {
+                    alert('Gagal: Admin hanya diizinkan membuat user dengan role USER!');
                     return;
                 }
-                userDatabase.push({ id: Date.now().toString(), name, username, password, role });
+                userDatabase.push({ id: Date.now().toString(), name, username, password, role, wilayah });
                 saveLog(`Menambah user baru: ${name}`);
             }
 
@@ -427,9 +761,8 @@
             const u = userDatabase.find(x => x.id === id);
             if (!u) return;
 
-            // PROTEKSI: Admin dilarang hapus Super Admin atau dirinya sendiri
-            if (currentUser.role === 'admin' && (u.role === 'super admin' || u.id === currentUser.id)) {
-                alert('Akses Ditolak: Otoritas tidak mencukupi untuk menghapus akun ini!');
+            if (currentUser.role === 'admin' && u.role !== 'user') {
+                alert('Akses Ditolak: Admin hanya boleh menghapus akun dengan role USER!');
                 return;
             }
 
@@ -449,7 +782,9 @@
                         <h2 class="text-2xl font-bold text-blue-600 flex items-center gap-2">
                             <span class="material-symbols-rounded">history</span> Log Activity
                         </h2>
-                        <button onclick="clearLogs()" class="bg-red-600 text-white px-4 py-2 rounded font-semibold text-xs uppercase">Bersihkan Log</button>
+                        ${currentUser.role === 'super admin' ? `
+                             <button onclick="clearLogs()" class="bg-red-600 text-white px-4 py-2 rounded font-semibold text-xs uppercase">Bersihkan Log</button>
+                        ` : ''}
                     </div>
                     <div class="table-container max-h-[600px] overflow-y-auto">
                         <table class="w-full text-xs">
@@ -483,6 +818,10 @@
         }
 
         function clearLogs() {
+            if (currentUser.role !== 'super admin') {
+                alert('Akses Ditolak: Hanya Super Admin yang dapat menghapus log aktivitas!');
+                return;
+            }
             if(confirm('Hapus semua catatan aktivitas?')) {
                 activityLogs = [];
                 localStorage.setItem('vmi_activity_logs', JSON.stringify(activityLogs));
@@ -490,15 +829,6 @@
             }
         }
 
-        const defaultConfig = {
-            system_title: "BIMBEL GAMBAR VILLA MERAH",
-            primary_color: "#ffffff",
-            secondary_color: "#2563eb",
-            text_color: "#1e293b",
-            background_color: "#eff6ff",
-            accent_color: "#3b82f6"
-        };
-        
         let currentModule = 'dashboard';
         let currentSubModule = '';
         let charts = {};
@@ -514,7 +844,6 @@
             { id: 'log-activity', name: 'Log Activity', icon: 'history', adminOnly: true }
         ];
 
-        // FUNGSI KHUSUS UNTUK DATA LEADS (PROGRAM BARU)
         function getLeadsProgramsList() {
             return [
                 'Program SR', 
@@ -527,23 +856,6 @@
                 'Program SR Online', 
                 'Program Arsitektur Online'
             ].sort();
-        }
-
-        function getAllProgramsList() {
-            const listProgramKelas = [
-                'SR Advance', 'SR Platinum', 'SR Gold', 'SR Silver', 'SR Bronze', 'SR Hybrid', 'SR Beasiswa', 
-                'SR Intensif SNBP', 'SR Intensif SNBT', 'SR Intensif SNBP dan SNBT', 'SR Intensif Mandiri', 
-                'SR Intermedite', 'Minat Seni',
-                'Arsitektur Gold', 'Arsitektur Silver', 'Arsitektur Bronze', 'Intensif USM UNPAR', 'Minat Arsitektur',
-                'SR Anak Jangka Panjang', 'SR Anak Jangka Pendek', 'SR SMP Jangka Panjang', 'SR SMP Jangka Pendek',
-                'SR Gold Online JK Panjang', 'SR Gold Online JK Pendek', 
-                'SR Bronze Online', 'SR SMP Online', 'SR Beasiswa Online',
-                'Arsitektur Gold Online JK Panjang', 'Arsitektur Gold Online JK Pendek', 'Arsitektur Silver Online',
-                'SR Intensif Online SNBP', 'SR Intensif Online SNBT', 'SR Intensif Online SNBP dan SNBT', 'SR Intensif Online Mandiri', 
-                'Minat Seni Online JK Panjang', 'Minat Seni Online JK Pendek', 'Minat Arsitektur Online',
-                'Intensif IUP', 'Intensif Online USM UNPAR'
-            ];
-            return [...new Set(listProgramKelas)].sort();
         }
         
         function renderSidebar() {
@@ -565,7 +877,7 @@
             nav.innerHTML = visibleMenu.map(item => `
                 <div class="mb-3">
                     <div class="sidebar-item group p-3 rounded-lg cursor-pointer transition-all duration-300 ${currentModule === item.id ? 'bg-blue-600 shadow-lg scale-105' : 'hover:bg-gray-100'}" 
-                         onclick="navigateTo('${item.id}', '${item.submenus ? item.submenus[0] : ''}')">
+                         onclick="navigateTo('${item.id}', '${item.submenus ? (currentUser.role === 'admin' && currentUser.wilayah !== 'Semua' ? currentUser.wilayah : item.submenus[0]) : ''}')">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-rounded ${currentModule === item.id ? 'text-white active-icon' : 'text-gray-500'}">
                                 ${item.icon}
@@ -575,15 +887,16 @@
                     </div>
                     ${item.submenus && currentModule === item.id ? `
                         <div class="ml-8 mt-2 space-y-1 border-l-2 border-gray-300 pl-3">
-                            ${item.submenus.map(sub => `
+                            ${item.submenus.map(sub => {
+                                return `
                                 <div class="sidebar-item group p-2 rounded-md cursor-pointer transition-all duration-200 ${currentSubModule === sub ? 'bg-blue-500 shadow-md' : 'hover:bg-gray-100'}"
                                      onclick="navigateTo('${item.id}', '${sub}')">
                                     <div class="flex items-center gap-2">
                                         <div class="w-1.5 h-1.5 rounded-full ${currentSubModule === sub ? 'bg-white' : 'bg-gray-400'}"></div>
                                         <span class="text-xs font-medium ${currentSubModule === sub ? 'text-white' : 'text-gray-600'}">${sub}</span>
                                     </div>
-                                </div>
-                            `).join('')}
+                                </div>`;
+                            }).join('')}
                         </div>
                     ` : ''}
                 </div>
@@ -649,11 +962,12 @@
             }
         }
 
-        // ==========================================
-        // MODULE: CRM FOLLOW UP (Dashboard Optimized)
-        // ==========================================
         function renderCRMFollowUp() {
             const location = currentSubModule || 'Bandung';
+            
+            const isAuthorized = (currentUser.role === 'super admin') || 
+                                 (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
+
             let allLeadsInWilayah = currentData.filter(d => d.module === 'data-leads' && d.wilayah === location);
             
             let leadsDataFiltered = [...allLeadsInWilayah];
@@ -682,7 +996,6 @@
             else if (conversionRate >= 10) colorClass = "text-amber-500";
 
             const stats = getCRMStatistics(leadsDataFiltered);
-            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const allPrograms = getLeadsProgramsList();
             const content = document.getElementById('main-content');
 
@@ -742,7 +1055,7 @@
                                 </div>
                                 <div class="bg-emerald-50 p-4 rounded-2xl text-center border border-emerald-100">
                                     <span class="text-[10px] font-black text-emerald-600 uppercase block mb-1">Closing</span>
-                                    <span class="text-2xl font-black text-emerald-900">${totalClosing}</span>
+                                    <span class="text-2xl font-black text-blue-900">${totalClosing}</span>
                                 </div>
                             </div>
                         </div>
@@ -788,11 +1101,11 @@
                                         <th>TANGGAL FOLLOW UP</th>
                                         <th>TANGGAL DAFTAR</th>
                                         <th>CATATAN</th>
-                                        ${isAdmin ? '<th class="col-aksi">AKSI</th>' : ''}
+                                        ${isAuthorized ? '<th class="col-aksi">AKSI</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAdmin ? '10' : '9'}" class="p-10 text-center text-gray-400">Tidak ada data untuk ditampilkan.</td></tr>` : 
+                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAuthorized ? '10' : '9'}" class="p-10 text-center text-gray-400"></td></tr>` : 
                                       leadsDataFiltered.map((lead, idx) => {
                                         let statusTampil = lead.status_crm === 'Deal' ? 'Closing' : (lead.status_crm || 'Pending');
                                         const programTampil = lead.status_crm === 'Deal' ? (lead.program_pendidikan || lead.program) : lead.program;
@@ -819,7 +1132,7 @@
                                                 ${lead.status_crm === 'Deal' ? formatTanggal(lead.tanggal_closing || lead.tanggal_input || lead.createdAt) : '-'}
                                             </td>
                                             <td class="p-3 text-[10px] italic text-slate-500 allow-wrap leading-relaxed">${lead.catatan_crm || '-'}</td>
-                                            ${isAdmin ? `
+                                            ${isAuthorized ? `
                                             <td class="p-3 text-center">
                                                 <div class="flex flex-row justify-center gap-3">
                                                     <button onclick="showUpdateCRMForm('${lead.__backendId}')" class="text-blue-600 font-bold hover:underline uppercase text-[11px]">EDIT</button>
@@ -1246,10 +1559,10 @@
                         <div class="text-[10px] text-amber-100 mt-2 font-bold uppercase">Kekurangan: ${Math.max(0, (100 - persentasePencapaian)).toFixed(1)}%</div>
                     </div>
                     
-                    <div class="lg:col-span-1 bg-sky-500 rounded-2xl p-6 shadow-xl text-center flex flex-col justify-center">
-                        <h3 class="text-sky-50 text-xs font-black mb-2 uppercase tracking-widest">Total Siswa</h3>
+                    <div class="lg:col-span-1 bg-indigo-500 rounded-2xl p-6 shadow-xl text-center flex flex-col justify-center">
+                        <h3 class="text-indigo-50 text-xs font-black mb-2 uppercase tracking-widest">Total Siswa</h3>
                         <div class="text-4xl font-bold text-white break-words" id="total-siswa-card">${olapData.summary.totalSiswa}</div>
-                        <div class="text-[10px] text-sky-100 mt-2 font-bold uppercase">Siswa Tercapai</div>
+                        <div class="text-[10px] text-indigo-100 mt-2 font-bold uppercase">Siswa Tercapai</div>
                     </div>
                 </div>
                 
@@ -1353,8 +1666,8 @@
                     datasets: [{
                         label: 'Siswa Baru',
                         data: dataSiswaArr,
-                        backgroundColor: 'rgba(56, 189, 248, 0.7)', 
-                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)', 
+                        borderColor: '#6366f1',
                         borderWidth: 1,
                         borderRadius: 4
                     }]
@@ -1395,7 +1708,7 @@
                 const createdDate = new Date(siswa.createdAt);
                 const monthIndex = createdDate.getMonth(); 
                 const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
-                const sisa = parseFloat(siswa.sisa_angsuran) || 0;
+                const sisa = parseFloat(siswa.sisa_angsuran || 0);
                 dataOmsetArr[monthIndex] += (biaya - sisa);
             });
             
@@ -1406,11 +1719,11 @@
                     datasets: [{
                         label: 'Omset',
                         data: dataOmsetArr,
-                        borderColor: '#34d399', 
-                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                        borderColor: '#059669', 
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#34d399'
+                        pointBackgroundColor: '#059669'
                     }]
                 },
                 options: {
@@ -1504,7 +1817,7 @@
                 const key = `${month}-${year}`; 
                 
                 const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
-                const sisa = parseFloat(siswa.sisa_angsuran) || 0;
+                const sisa = parseFloat(siswa.sisa_angsuran || 0);
                 const omsetMasuk = biaya - sisa;
                 const kotaSiswa = (siswa.asal_kota || 'Lainnya').toUpperCase();
                 const sekolahSiswa = (siswa.asal_sekolah || 'Lainnya').toUpperCase();
@@ -1664,7 +1977,7 @@
                     labels: olapData.cities.labels,
                     datasets: [{
                         data: olapData.cities.data,
-                        backgroundColor: ['#475569', '#0ea5e9', '#6366f1', '#14b8a6', '#f43f5e'],
+                        backgroundColor: ['#475569', '#FFC107', '#6366f1', '#14b8a6', '#f43f5e'],
                         borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
@@ -1828,6 +2141,10 @@
         
         function renderDataSiswa() {
             const location = currentSubModule || 'Bandung';
+
+            const isAuthorized = (currentUser.role === 'super admin') || 
+                                 (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
+
             let filteredData = currentData.filter(d => d.module === 'data-siswa' && d.location === location);
             
             const allPrograms = getAllProgramsList();
@@ -1850,7 +2167,6 @@
                 });
             }
             
-            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const content = document.getElementById('main-content');
             
             content.innerHTML = `
@@ -1884,11 +2200,18 @@
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
-                            ${isAdmin ? `
-                                <button onclick="showAddDataSiswaForm('${location}')" 
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold whitespace-nowrap text-sm">
-                                    + Tambah Siswa
-                                </button>
+                            ${isAuthorized ? `
+                                <div class="flex gap-2">
+                                    <button onclick="triggerImport('data-siswa', '${location}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold text-xs transition flex items-center gap-1">
+                                        <span class="material-symbols-rounded" style="font-size:16px">upload_file</span> IMPOR
+                                    </button>
+                                    <button onclick="exportToExcel('data-siswa', '${location}')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded font-bold text-xs transition flex items-center gap-1">
+                                        <span class="material-symbols-rounded" style="font-size:16px">download</span> EKSPOR
+                                    </button>
+                                    <button onclick="showAddDataSiswaForm('${location}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold text-xs transition">
+                                        + TAMBAH SISWA
+                                    </button>
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -1898,7 +2221,7 @@
                             <thead class="sticky top-0 z-10">
                                 <tr class="bg-blue-600 text-white">
                                     <th>NO</th>
-                                    <th>NAMA</th>
+                                    <th>NAMA SISWA</th>
                                     <th>TEMPAT TANGGAL LAHIR</th>
                                     <th>ASAL SEKOLAH</th>
                                     <th>KELAS</th>
@@ -1915,7 +2238,7 @@
                                     <th>BIAYA</th>
                                     <th>PEMBAYARAN</th>
                                     <th>SISA</th>
-                                    ${isAdmin ? '<th class="sticky right-0 bg-blue-600 col-aksi">AKSI</th>' : ''}
+                                    ${isAuthorized ? '<th class="sticky right-0 bg-blue-600 col-aksi">AKSI</th>' : ''}
                                 </tr>
                             </thead>
                             <tbody id="tbody-siswa">
@@ -1945,7 +2268,7 @@
                                         <td class="p-1 text-left text-[9px] font-semibold text-blue-600">${formatRupiah(siswa.biaya_pendidikan)}</td>
                                         <td class="p-1 text-left text-[9px] font-semibold text-green-600">${formatRupiah(realPay)}</td>
                                         <td class="p-1 text-left text-[9px] font-semibold text-red-600">${formatRupiah(siswa.sisa_angsuran)}</td>
-                                        ${isAdmin ? `
+                                        ${isAuthorized ? `
                                         <td class="p-1 text-center text-[9px] sticky right-0 bg-white col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">
                                             <div class="flex flex-row justify-center gap-2 items-center">
                                                 <button onclick="showEditSiswaForm('${siswa.__backendId}')" class="text-blue-600 hover:text-blue-800 font-bold uppercase text-[9px]">EDIT</button>
@@ -1955,8 +2278,8 @@
                                     </tr>
                                 `}).join('')}
                                 ${filteredData.length === 0 ? `
-                                    <tr><td colspan="${isAdmin ? '18' : '17'}" class="p-8 text-center text-blue-600">
-                                        Tidak ada data siswa ditemukan untuk filter ini.
+                                    <tr><td colspan="${isAuthorized ? '18' : '17'}" class="p-8 text-center text-blue-600">
+                                        
                                     </td></tr>
                                 ` : ''}
                             </tbody>
@@ -2227,6 +2550,10 @@
         
         function renderTargetPeraihanDetail() {
             const location = currentSubModule || 'Bandung';
+
+            const isAuthorized = (currentUser.role === 'super admin') || 
+                                 (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
+
             const allPrograms = getAllProgramsList();
             
             let filteredTargetData = currentData.filter(d => d.module === 'target-market' && d.wilayah === location);
@@ -2247,7 +2574,6 @@
                 filteredSiswaData = filteredSiswaData.filter(d => (new Date(d.createdAt).getMonth() + 1) == selectedMonthFilter);
             }
 
-            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const chartData = generateTargetPeraihanChartData(filteredTargetData, selectedProgramFilter, location);
             const olapSiswaData = generateOLAPFromData(filteredSiswaData);
             
@@ -2283,7 +2609,7 @@
                         dailyClosing[dayIdx]++;
                         
                         const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
-                        const sisa = parseFloat(siswa.sisa_angsuran) || 0;
+                        const sisa = parseFloat(siswa.sisa_angsuran || 0);
                         dailyOmset[dayIdx] += (biaya - sisa);
                     }
                 });
@@ -2326,11 +2652,18 @@
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
-                            ${isAdmin ? `
-                                <button onclick="showAddTargetPeraihanForm('${location}')" 
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm transition">
-                                    + Tambah Data
-                                </button>
+                            ${isAuthorized ? `
+                                <div class="flex gap-2">
+                                    <button onclick="openProgramManager()" 
+                                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold text-sm transition flex items-center gap-2 shadow-md uppercase">
+                                        <span class="material-symbols-rounded" style="font-size:18px">settings_suggest</span>
+                                        Kelola Produk
+                                    </button>
+                                    <button onclick="showAddTargetPeraihanForm('${location}')" 
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm transition uppercase shadow-md">
+                                        + Tambah Data
+                                    </button>
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -2348,8 +2681,8 @@
                             <div class="text-[10px] font-black uppercase text-amber-100 tracking-tighter">Omset Belum Tercapai</div>
                             <div class="text-2xl font-bold mt-1 break-words">${formatRupiahFull(omsetGapModul)}</div>
                         </div>
-                        <div class="flex-1 min-w-[120px] bg-sky-500 text-white p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
-                            <div class="text-[10px] font-black uppercase text-sky-50 tracking-tighter whitespace-nowrap">Target Siswa</div>
+                        <div class="flex-1 min-w-[120px] bg-[#FFC107] text-blue-900 p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
+                            <div class="text-[10px] font-black uppercase text-blue-900/80 tracking-tighter whitespace-nowrap">Target Siswa</div>
                             <div class="text-3xl font-bold mt-1 break-words">${chartData.summary.totalTargetSiswa}</div>
                         </div>
                         <div class="flex-1 min-w-[120px] bg-indigo-500 text-white p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
@@ -2420,12 +2753,12 @@
                                         <th class="bg-blue-700">Target Omset</th>
                                         <th>OMSET TERCAPAI</th>
                                         <th class="bg-rose-700">BELUM TERCAPAI</th>
-                                        ${selectedProgramFilter !== 'all' && isAdmin ? '<th class="sticky right-0 bg-blue-600 col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">AKSI</th>' : ''}
+                                        ${selectedProgramFilter !== 'all' && isAuthorized ? '<th class="sticky right-0 bg-blue-600 col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">AKSI</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${chartData.tableRows.length === 0 ? `
-                                        <tr><td colspan="${selectedProgramFilter !== 'all' && isAdmin ? '10' : '9'}" class="p-8 text-center text-blue-600 font-medium">
+                                        <tr><td colspan="${selectedProgramFilter !== 'all' && isAuthorized ? '10' : '9'}" class="p-8 text-center text-blue-600 font-medium">
                                             <div class="text-lg mb-2">📊 Belum ada data tersedia</div>
                                         </td></tr>
                                     ` : chartData.tableRows.map((row, idx) => {
@@ -2442,7 +2775,7 @@
                                             <td class="p-2 text-center text-xs font-semibold text-purple-600 uppercase bg-blue-50/50 font-mono tracking-tighter">${formatRupiah(row.targetOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-emerald-600 uppercase font-mono tracking-tighter">${formatRupiah(row.realOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono tracking-tighter">${formatRupiah(Math.max(0, omsetGap))}</td>
-                                            ${selectedProgramFilter !== 'all' && isAdmin ? `
+                                            ${selectedProgramFilter !== 'all' && isAuthorized ? `
                                             <td class="p-2 text-center text-xs sticky right-0 bg-white col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">
                                                 <div class="flex flex-row justify-center gap-2 items-center">
                                                     <button onclick="showEditTargetPeraihanForm('${row.id}')" class="text-blue-600 font-bold hover:text-blue-800 uppercase text-[9px]">EDIT</button>
@@ -2461,7 +2794,7 @@
                                         <td class="p-2 text-center text-xs text-purple-700 bg-blue-50 font-mono tracking-tighter">${formatRupiah(totalTgtOmset)}</td>
                                         <td class="p-2 text-center text-xs text-emerald-700 font-mono tracking-tighter">${formatRupiah(totalRelOmset)}</td>
                                         <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono tracking-tighter">${formatRupiah(Math.max(0, totalOmsetGap))}</td>
-                                        ${selectedProgramFilter !== 'all' && isAdmin ? '<td class="bg-slate-100"></td>' : ''}
+                                        ${selectedProgramFilter !== 'all' && isAuthorized ? '<td class="bg-slate-100"></td>' : ''}
                                     </tr>
                                 </tfoot>
                             </table>
@@ -2492,14 +2825,14 @@
                         {
                             label: 'Siswa Baru (Closing)',
                             data: stats.closing,
-                            backgroundColor: '#10b981', 
+                            backgroundColor: '#6366f1', 
                             borderRadius: 4,
                             yAxisID: 'y'
                         },
                         {
                             label: 'Omset Harian (Rp)',
                             data: stats.omset,
-                            backgroundColor: '#3b82f6', 
+                            backgroundColor: '#059669', 
                             borderRadius: 4,
                             yAxisID: 'y1'
                         }
@@ -2683,7 +3016,7 @@
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Bulan</label>
                                 <select name="bulan" id="tm-bulan" required class="w-full px-4 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${isEdit && editData.bulan == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
@@ -2764,13 +3097,13 @@
                             { 
                                 label: 'Target Siswa', 
                                 data: chartData.targetSiswaData, 
-                                backgroundColor: '#64748b', 
+                                backgroundColor: '#FFC107', 
                                 borderRadius: 5 
                             },
                             { 
                                 label: 'Siswa Tercapai', 
                                 data: chartData.realisasiSiswaData, 
-                                backgroundColor: '#fbbf24', 
+                                backgroundColor: '#6366f1', 
                                 borderRadius: 5 
                             }
                         ]
@@ -2779,11 +3112,11 @@
                         responsive: true, 
                         maintainAspectRatio: false, 
                         plugins: { 
-                            legend: { position: 'bottom', labels: { family: 'Poppins' } } 
+                            legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } 
                         },
                         scales: {
-                            x: { ticks: { family: 'Poppins' } },
-                            y: { ticks: { family: 'Poppins' } }
+                            x: { ticks: { font: { family: 'Poppins' } } },
+                            y: { beginAtZero: true, ticks: { font: { family: 'Poppins' } } }
                         }
                     }
                 });
@@ -2799,13 +3132,13 @@
                             { 
                                 label: 'Target Omset (Juta)', 
                                 data: chartData.targetOmsetData, 
-                                backgroundColor: '#94a3b8', 
+                                backgroundColor: '#1e3a8a', 
                                 borderRadius: 5 
                             },
                             { 
                                 label: 'Omset Tercapai (Juta)', 
                                 data: chartData.realisasiOmsetData, 
-                                backgroundColor: '#818cf8', 
+                                backgroundColor: '#059669', 
                                 borderRadius: 5 
                             }
                         ]
@@ -2814,11 +3147,17 @@
                         responsive: true, 
                         maintainAspectRatio: false, 
                         plugins: { 
-                            legend: { position: 'bottom', labels: { family: 'Poppins' } } 
+                            legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } 
                         },
                         scales: {
-                            x: { ticks: { family: 'Poppins' } },
-                            y: { ticks: { family: 'Poppins' } }
+                            x: { ticks: { font: { family: 'Poppins' } } },
+                            y: { 
+                                beginAtZero: true, 
+                                ticks: { 
+                                    font: { family: 'Poppins' },
+                                    callback: function(value) { return value + ' Jt'; }
+                                } 
+                            }
                         }
                     }
                 });
@@ -2827,6 +3166,10 @@
         
         function renderDataLeadsDetail() {
             const location = currentSubModule || 'Bandung';
+
+            const isAuthorized = (currentUser.role === 'super admin') || 
+                                 (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
+
             let filteredData = currentData.filter(d => d.module === 'data-leads' && d.wilayah === location);
             
             if (selectedStatusFilter === 'not_closing') {
@@ -2843,21 +3186,22 @@
 
             if (selectedMonthFilter !== 'all') {
                 filteredData = filteredData.filter(d => {
-                    if (!d.createdAt) return false;
-                    const month = new Date(d.createdAt).getMonth() + 1;
+                    const dDate = d.tanggal_input || d.createdAt;
+                    if (!dDate) return false;
+                    const month = new Date(dDate).getMonth() + 1;
                     return month == selectedMonthFilter;
                 });
             }
 
             if (selectedYearFilter !== 'all') {
                 filteredData = filteredData.filter(d => {
-                    if (!d.createdAt) return false;
-                    const year = new Date(d.createdAt).getFullYear();
+                    const dDate = d.tanggal_input || d.createdAt;
+                    if (!dDate) return false;
+                    const year = new Date(dDate).getFullYear();
                     return year == selectedYearFilter;
                 });
             }
 
-            const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super admin';
             const content = document.getElementById('main-content');
             content.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl border border-blue-200 font-['Poppins']">
@@ -2898,11 +3242,18 @@
                                     ${generateYearOptionsForFilter(selectedYearFilter)}
                                 </select>
                             </div>
-                            ${isAdmin ? `
-                                <button onclick="showAddDataLeadsForm('${location}')" 
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm transition whitespace-nowrap">
-                                    + Tambah Lead
-                                </button>
+                            ${isAuthorized ? `
+                                <div class="flex gap-2">
+                                    <button onclick="triggerImport('data-leads', '${location}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold text-xs transition flex items-center gap-1">
+                                        <span class="material-symbols-rounded" style="font-size:16px">upload_file</span> IMPOR
+                                    </button>
+                                    <button onclick="exportToExcel('data-leads', '${location}')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded font-bold text-xs transition flex items-center gap-1">
+                                        <span class="material-symbols-rounded" style="font-size:16px">download</span> EKSPOR
+                                    </button>
+                                    <button onclick="showAddDataLeadsForm('${location}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold text-xs transition">
+                                        + TAMBAH LEAD
+                                    </button>
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -2917,22 +3268,22 @@
                                         <th>TEMPAT TANGGAL LAHIR</th>
                                         <th>ASAL SEKOLAH</th>
                                         <th>KELAS</th>
-                                        <th>NO HP</th>
-                                        <th>MEDIA SOSIAL</th>
-                                        <th>NAMA AKUN</th>
                                         <th>ALAMAT</th>
                                         <th>KOTA/KAB ASAL</th>
                                         <th>INFO PROGRAM</th>
+                                        <th>MEDIA SOSIAL</th>
+                                        <th>NAMA AKUN</th>
+                                        <th>INFORMASI VILLA MERAH DARI</th>
+                                        <th>HP SISWA</th>
                                         <th>NAMA ORTU</th>
                                         <th>HP ORTU</th>
-                                        <th>INFORMASI DARI</th>
                                         <th>TGL INPUT</th>
-                                        ${isAdmin ? '<th class="sticky right-0 bg-blue-600 col-aksi">AKSI</th>' : ''}
+                                        ${isAuthorized ? '<th class="sticky right-0 bg-blue-600 col-aksi">AKSI</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-leads">
                                     ${filteredData.length === 0 ? `
-                                        <tr><td colspan="${isAdmin ? '16' : '15'}" class="p-8 text-center text-blue-600 font-medium tracking-tight">Belum ada data leads untuk filter ini.</td></tr>
+                                        <tr><td colspan="${isAuthorized ? '16' : '15'}" class="p-8 text-center text-blue-600 font-medium tracking-tight"></td></tr>
                                         ` : filteredData.map((lead, idx) => {
                                             const infoDari = Array.isArray(lead.info_villa_merah_dari) ? lead.info_villa_merah_dari.join(', ') : (lead.info_villa_merah_dari || '-');
                                             const platform = Array.isArray(lead.platform_medsos) ? lead.platform_medsos.join(', ') : (lead.platform_medsos || '-');
@@ -2944,19 +3295,19 @@
                                             <td class="p-2 text-left text-[10px] font-semibold text-blue-800 uppercase tracking-tight" title="${lead.ttl || '-'}">${lead.ttl || '-'}</td>
                                             <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.nama_siswa}">${lead.asal_sekolah}</td>
                                             <td class="p-2 text-center text-[10px] uppercase tracking-tighter font-mono">${lead.kelas || '-'}</td>
-                                            <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${lead.no_hp}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tighter" title="${lead.alamat}">${lead.alamat}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase tracking-tight" title="${lead.asal_kota}">${lead.asal_kota || '-'}</td>
+                                            <td class="p-2 text-left text-[10px] font-bold text-black uppercase tracking-tighter">${lead.program || '-'}</td>
                                             <td class="p-2 text-left">
                                                 <span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-[9px] font-bold uppercase whitespace-nowrap tracking-tighter">${platform}</span>
                                             </td>
                                             <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.nama_medsos}">${lead.nama_medsos}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tighter" title="${lead.alamat}">${lead.alamat}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase tracking-tight" title="${lead.asal_kota}">${lead.asal_kota || '-'}</td>
-                                            <td class="p-2 text-left text-[10px] font-bold text-black uppercase tracking-tighter">${lead.program || '-'}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tight" title="${infoDari}">${infoDari}</td>
+                                            <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${lead.no_hp}</td>
                                             <td class="p-2 text-left text-[10px] uppercase tracking-tight">${lead.nama_ortu || '-'}</td>
                                             <td class="p-2 text-center text-[10px] font-mono">${lead.no_tlp_ortu || '-'}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tight" title="${infoDari}">${infoDari}</td>
                                             <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${formatTanggal(lead.tanggal_input || lead.createdAt)}</td>
-                                            ${isAdmin ? `
+                                            ${isAuthorized ? `
                                             <td class="p-2 text-center sticky right-0 bg-white border-l border-blue-100 shadow-[-5px_0_10px_rgba(0,0,0,0.05)] col-aksi">
                                                 <div class="flex flex-row justify-center gap-2 items-center">
                                                     <button onclick="showEditLeadsForm('${lead.__backendId}')" class="text-blue-600 hover:text-blue-800 font-bold uppercase text-[9px]">EDIT</button>
@@ -2995,7 +3346,7 @@
             const content = document.getElementById('main-content');
             const isEdit = !!editData;
             const allPrograms = getLeadsProgramsList();
-            const tglDefaultLeads = isEdit ? new Date(editData.createdAt).toISOString().split('T')[0] : '';
+            const tglDefaultLeads = isEdit ? new Date(editData.tanggal_input || editData.createdAt).toISOString().split('T')[0] : '';
 
             content.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl max-w-full mx-auto border border-blue-200 font-['Poppins']">
@@ -3013,7 +3364,7 @@
                             </div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Sekolah</label><input type="text" name="asal_sekolah" value="${isEdit ? editData.asal_sekolah : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Kelas</label><input type="text" name="kelas" value="${isEdit ? (editData.kelas || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
-                            <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Kota/Kab</label><input type="text" name="asal_kota" value="${isEdit ? (editData.asal_kota || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
+                            <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Kota/Kab</label><input type="text" name="asal_kota" value="${isEdit ? (editData.asal_kota || '') : ''}" required placeholder="Misal: Bandung" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">No HP Siswa</label><input type="text" name="no_hp" value="${isEdit ? editData.no_hp : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Akun Medsos</label><input type="text" name="nama_medsos" value="${isEdit ? editData.nama_medsos : ''}" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             
@@ -3095,6 +3446,7 @@
                 payload.info_villa_merah_dari = selectedInfo;
                 if (!isEdit) payload.tgl_followup = "";
                 payload.createdAt = tglLeads ? new Date(tglLeads).toISOString() : new Date().toISOString();
+                payload.tanggal_input = payload.createdAt;
 
                 let result;
                 if (isEdit) {
@@ -3145,7 +3497,7 @@
         }
 
         function formatTanggal(dateStr) {
-            if (!dateStr) return '-';
+            if (!dateStr || dateStr === '-') return '-';
             const d = new Date(dateStr);
             const day = d.getDate();
             const month = d.getMonth() + 1;
