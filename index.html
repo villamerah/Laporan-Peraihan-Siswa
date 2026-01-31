@@ -194,6 +194,7 @@
             return [...new Set(programDatabase)].sort();
         }
 
+        // Inisialisasi default filter agar tidak undefined
         let selectedProgramFilter = 'all';
         let selectedYearFilter = 'all'; 
         let selectedMonthFilter = (new Date().getMonth() + 1).toString(); 
@@ -907,8 +908,9 @@
             currentModule = module;
             currentSubModule = submodule;
             
-            selectedProgramFilter = 'all';
-            selectedStatusFilter = 'all'; 
+            // Set default value jika filter bernilai undefined
+            selectedProgramFilter = selectedProgramFilter || 'all';
+            selectedStatusFilter = selectedStatusFilter || 'all'; 
             
             const currentSystemYear = new Date().getFullYear();
             const defaultStartYear = "2026";
@@ -917,8 +919,8 @@
                 selectedYearFilter = (currentSystemYear < 2026 ? defaultStartYear : currentSystemYear.toString());
                 selectedMonthFilter = (new Date().getMonth() + 1).toString();
             } else {
-                selectedYearFilter = 'all';
-                selectedMonthFilter = 'all';
+                selectedYearFilter = selectedYearFilter || 'all';
+                selectedMonthFilter = selectedMonthFilter || 'all';
             }
             
             renderSidebar();
@@ -971,19 +973,25 @@
             let allLeadsInWilayah = currentData.filter(d => d.module === 'data-leads' && d.wilayah === location);
             
             let leadsDataFiltered = [...allLeadsInWilayah];
-            if (selectedProgramFilter !== 'all') {
-                leadsDataFiltered = leadsDataFiltered.filter(d => d.program === selectedProgramFilter);
+            
+            // Pengaman undefined pada filter
+            const progF = selectedProgramFilter || 'all';
+            const monthF = selectedMonthFilter || 'all';
+            const yearF = selectedYearFilter || 'all';
+
+            if (progF !== 'all') {
+                leadsDataFiltered = leadsDataFiltered.filter(d => d.program === progF);
             }
-            if (selectedMonthFilter !== 'all') {
+            if (monthF !== 'all') {
                 leadsDataFiltered = leadsDataFiltered.filter(d => {
                     const tgl = d.tanggal_input || d.createdAt;
-                    return (new Date(tgl).getMonth() + 1) == selectedMonthFilter;
+                    return (new Date(tgl).getMonth() + 1) == monthF;
                 });
             }
-            if (selectedYearFilter !== 'all') {
+            if (yearF !== 'all') {
                 leadsDataFiltered = leadsDataFiltered.filter(d => {
                     const tgl = d.tanggal_input || d.createdAt;
-                    return new Date(tgl).getFullYear() == selectedYearFilter;
+                    return new Date(tgl).getFullYear() == yearF;
                 });
             }
 
@@ -1010,15 +1018,15 @@
                         </div>
                         <div class="flex flex-wrap gap-3">
                             <select id="program-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                <option value="all" ${selectedProgramFilter === 'all' ? 'selected' : ''}>Semua Program</option>
-                                ${allPrograms.map(prog => `<option value="${prog}" ${selectedProgramFilter === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
+                                ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
                             </select>
                             <select id="month-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                             </select>
                             <select id="year-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
-                                ${generateYearOptionsForFilter(selectedYearFilter)}
+                                <option value="all" ${yearF === 'all' ? 'selected' : ''}>Semua Tahun</option>
+                                ${generateYearOptionsForFilter(yearF)}
                             </select>
                         </div>
                     </div>
@@ -1150,8 +1158,8 @@
         }
 
         function getCRMStatistics(data) {
-            const tahun = selectedYearFilter !== 'all' ? parseInt(selectedYearFilter) : new Date().getFullYear();
-            const bulan = selectedMonthFilter !== 'all' ? parseInt(selectedMonthFilter) : new Date().getMonth() + 1;
+            const tahun = (selectedYearFilter && selectedYearFilter !== 'all') ? parseInt(selectedYearFilter) : new Date().getFullYear();
+            const bulan = (selectedMonthFilter && selectedMonthFilter !== 'all') ? parseInt(selectedMonthFilter) : new Date().getMonth() + 1;
             const daysInMonth = new Date(tahun, bulan, 0).getDate();
 
             const stats = {
@@ -1190,8 +1198,8 @@
                 const tglInputStr = item.tanggal_input || item.createdAt;
                 if(tglInputStr) {
                     const dIn = new Date(tglInputStr);
-                    const isYearMatch = selectedYearFilter === 'all' || dIn.getFullYear() == selectedYearFilter;
-                    const isMonthMatch = selectedMonthFilter === 'all' || (dIn.getMonth() + 1) == selectedMonthFilter;
+                    const isYearMatch = (!selectedYearFilter || selectedYearFilter === 'all') || dIn.getFullYear() == selectedYearFilter;
+                    const isMonthMatch = (!selectedMonthFilter || selectedMonthFilter === 'all') || (dIn.getMonth() + 1) == selectedMonthFilter;
                     
                     if(isYearMatch && isMonthMatch) {
                         const dayIn = dIn.getDate();
@@ -1204,8 +1212,8 @@
                 if(item.status_crm === 'Deal' || item.is_closing === true) {
                     const tglClosingStr = item.tanggal_closing || item.tanggal_input || item.createdAt;
                     const dCl = new Date(tglClosingStr);
-                    const isYearMatchCl = selectedYearFilter === 'all' || dCl.getFullYear() == selectedYearFilter;
-                    const isMonthMatchCl = selectedMonthFilter === 'all' || (dCl.getMonth() + 1) == selectedMonthFilter;
+                    const isYearMatchCl = (!selectedYearFilter || selectedYearFilter === 'all') || dCl.getFullYear() == selectedYearFilter;
+                    const isMonthMatchCl = (!selectedMonthFilter || selectedMonthFilter === 'all') || (dCl.getMonth() + 1) == selectedMonthFilter;
 
                     if(isYearMatchCl && isMonthMatchCl) {
                         const dayCl = dCl.getDate();
@@ -1503,18 +1511,20 @@
         function renderDashboard() {
             let dataSiswa = currentData.filter(d => d.module === 'data-siswa');
             
-            if (selectedYear !== 'all') {
+            const yrF = selectedYear || 'all';
+
+            if (yrF !== 'all') {
                 dataSiswa = dataSiswa.filter(siswa => {
                     const createdDate = new Date(siswa.createdAt);
-                    return createdDate.getFullYear() == selectedYear;
+                    return createdDate.getFullYear() == yrF;
                 });
             }
             
             const olapData = generateOLAPFromData(dataSiswa);
 
             let targetMarketData = currentData.filter(d => d.module === 'target-market');
-            if (selectedYear !== 'all') {
-                targetMarketData = targetMarketData.filter(d => d.tahun == selectedYear);
+            if (yrF !== 'all') {
+                targetMarketData = targetMarketData.filter(d => d.tahun == yrF);
             }
             const totalTargetOmset = targetMarketData.reduce((acc, curr) => acc + (parseFloat(curr.target_omset) || 0), 0);
             
@@ -1535,8 +1545,8 @@
                     </div>
                     <select id="filter-tahun-dashboard" onchange="filterDashboardByYear()" 
                             class="px-4 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                        <option value="all" ${selectedYear === 'all' ? 'selected' : ''}>Semua Tahun</option>
-                        ${generateYearOptions()}
+                        <option value="all" ${yrF === 'all' ? 'selected' : ''}>Semua Tahun</option>
+                        ${generateYearOptions(yrF)}
                     </select>
                 </div>
                 
@@ -1625,13 +1635,13 @@
             return `Rp ${num.toLocaleString('id-ID')}`;
         }
         
-        function generateYearOptions() {
+        function generateYearOptions(currVal) {
             const startYear = 2026;
             const endYear = 2035; 
             let options = '';
             
             for (let year = startYear; year <= endYear; year++) {
-                options += `<option value="${year}" ${selectedYear == year ? 'selected' : ''}>${year}</option>`;
+                options += `<option value="${year}" ${currVal == year ? 'selected' : ''}>${year}</option>`;
             }
             
             return options;
@@ -1799,8 +1809,8 @@
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
 
-            const bulanFilter = selectedMonthFilter;
-            const tahunFilter = selectedYearFilter;
+            const bulanFilter = selectedMonthFilter || 'all';
+            const tahunFilter = selectedYearFilter || 'all';
             
             const locationCounts = { bandung: 0, jaksel: 0, jaktim: 0 };
             const locationOmsetReal = { bandung: 0, jaksel: 0, jaktim: 0 };
@@ -2149,21 +2159,25 @@
             
             const allPrograms = getAllProgramsList();
             
-            if (selectedProgramFilter !== 'all') {
-                filteredData = filteredData.filter(d => d.program === selectedProgramFilter);
+            const progF = selectedProgramFilter || 'all';
+            const yearF = selectedYearFilter || 'all';
+            const monthF = selectedMonthFilter || 'all';
+
+            if (progF !== 'all') {
+                filteredData = filteredData.filter(d => d.program === progF);
             }
 
-            if (selectedYearFilter !== 'all') {
+            if (yearF !== 'all') {
                 filteredData = filteredData.filter(d => {
                     const year = new Date(d.createdAt).getFullYear();
-                    return year == selectedYearFilter;
+                    return year == yearF;
                 });
             }
 
-            if (selectedMonthFilter !== 'all') {
+            if (monthF !== 'all') {
                 filteredData = filteredData.filter(d => {
                     const month = new Date(d.createdAt).getMonth() + 1;
-                    return month == selectedMonthFilter;
+                    return month == monthF;
                 });
             }
             
@@ -2182,22 +2196,22 @@
                             <div class="flex items-center gap-2">
                                 <select id="program-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
-                                    <option value="all" ${selectedProgramFilter === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${selectedProgramFilter === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
-                                    <option value="all" ${selectedMonthFilter === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="year-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
-                                    ${generateYearOptionsForFilter(selectedYearFilter)}
+                                    <option value="all" ${yearF === 'all' ? 'selected' : ''}>Semua Tahun</option>
+                                    ${generateYearOptionsForFilter(yearF)}
                                 </select>
                             </div>
                             ${isAuthorized ? `
@@ -2559,25 +2573,29 @@
             let filteredTargetData = currentData.filter(d => d.module === 'target-market' && d.wilayah === location);
             let filteredSiswaData = currentData.filter(d => d.module === 'data-siswa' && d.location === location);
 
-            if (selectedProgramFilter !== 'all') {
-                filteredTargetData = filteredTargetData.filter(d => d.program === selectedProgramFilter);
-                filteredSiswaData = filteredSiswaData.filter(d => d.program === selectedProgramFilter);
+            const progF = selectedProgramFilter || 'all';
+            const yearF = selectedYearFilter || 'all';
+            const monthF = selectedMonthFilter || 'all';
+
+            if (progF !== 'all') {
+                filteredTargetData = filteredTargetData.filter(d => d.program === progF);
+                filteredSiswaData = filteredSiswaData.filter(d => d.program === progF);
             }
             
-            if (selectedYearFilter !== 'all') {
-                filteredTargetData = filteredTargetData.filter(d => d.tahun == selectedYearFilter);
-                filteredSiswaData = filteredSiswaData.filter(d => new Date(d.createdAt).getFullYear() == selectedYearFilter);
+            if (yearF !== 'all') {
+                filteredTargetData = filteredTargetData.filter(d => d.tahun == yearF);
+                filteredSiswaData = filteredSiswaData.filter(d => new Date(d.createdAt).getFullYear() == yearF);
             }
 
-            if (selectedMonthFilter !== 'all') {
-                filteredTargetData = filteredTargetData.filter(d => d.bulan == selectedMonthFilter);
-                filteredSiswaData = filteredSiswaData.filter(d => (new Date(d.createdAt).getMonth() + 1) == selectedMonthFilter);
+            if (monthF !== 'all') {
+                filteredTargetData = filteredTargetData.filter(d => d.bulan == monthF);
+                filteredSiswaData = filteredSiswaData.filter(d => (new Date(d.createdAt).getMonth() + 1) == monthF);
             }
 
-            const chartData = generateTargetPeraihanChartData(filteredTargetData, selectedProgramFilter, location);
+            const chartData = generateTargetPeraihanChartData(filteredTargetData, progF, location);
             const olapSiswaData = generateOLAPFromData(filteredSiswaData);
             
-            const labelProgram = selectedProgramFilter === 'all' ? 'Semua Program' : selectedProgramFilter;
+            const labelProgram = progF === 'all' ? 'Semua Program' : progF;
 
             const targetOmsetModul = chartData.summary.totalTargetOmsetRaw;
             const omsetRealisasiModul = chartData.summary.totalRealisasiOmsetRaw;
@@ -2595,16 +2613,16 @@
             const totalSiswaGap = totalTgtSiswa - totalRelSiswa;
             const totalOmsetGap = totalTgtOmset - totalRelOmset;
 
-            const showDailyChart = selectedMonthFilter !== 'all' && selectedYearFilter !== 'all';
+            const showDailyChart = (monthF !== 'all' && yearF !== 'all');
             let dailySiswaStats = null;
             if (showDailyChart) {
-                const daysInMonth = new Date(selectedYearFilter, selectedMonthFilter, 0).getDate();
+                const daysInMonth = new Date(yearF, monthF, 0).getDate();
                 const dailyClosing = new Array(daysInMonth).fill(0);
                 const dailyOmset = new Array(daysInMonth).fill(0);
 
                 filteredSiswaData.forEach(siswa => {
                     const d = new Date(siswa.createdAt);
-                    if ((d.getMonth() + 1) == selectedMonthFilter && d.getFullYear() == selectedYearFilter) {
+                    if ((d.getMonth() + 1) == monthF && d.getFullYear() == yearF) {
                         const dayIdx = d.getDate() - 1;
                         dailyClosing[dayIdx]++;
                         
@@ -2634,22 +2652,22 @@
                             <div class="flex items-center gap-2">
                                 <select id="program-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedProgramFilter === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${selectedProgramFilter === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedMonthFilter === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="year-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
-                                    ${generateYearOptionsForFilter(selectedYearFilter)}
+                                    <option value="all" ${yearF === 'all' ? 'selected' : ''}>Semua Tahun</option>
+                                    ${generateYearOptionsForFilter(yearF)}
                                 </select>
                             </div>
                             ${isAuthorized ? `
@@ -2753,12 +2771,12 @@
                                         <th class="bg-blue-700">Target Omset</th>
                                         <th>OMSET TERCAPAI</th>
                                         <th class="bg-rose-700">BELUM TERCAPAI</th>
-                                        ${selectedProgramFilter !== 'all' && isAuthorized ? '<th class="sticky right-0 bg-blue-600 col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">AKSI</th>' : ''}
+                                        ${progF !== 'all' && isAuthorized ? '<th class="sticky right-0 bg-blue-600 col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">AKSI</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${chartData.tableRows.length === 0 ? `
-                                        <tr><td colspan="${selectedProgramFilter !== 'all' && isAuthorized ? '10' : '9'}" class="p-8 text-center text-blue-600 font-medium">
+                                        <tr><td colspan="${progF !== 'all' && isAuthorized ? '10' : '9'}" class="p-8 text-center text-blue-600 font-medium">
                                             <div class="text-lg mb-2">📊 Belum ada data tersedia</div>
                                         </td></tr>
                                     ` : chartData.tableRows.map((row, idx) => {
@@ -2775,7 +2793,7 @@
                                             <td class="p-2 text-center text-xs font-semibold text-purple-600 uppercase bg-blue-50/50 font-mono tracking-tighter">${formatRupiah(row.targetOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-emerald-600 uppercase font-mono tracking-tighter">${formatRupiah(row.realOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono tracking-tighter">${formatRupiah(Math.max(0, omsetGap))}</td>
-                                            ${selectedProgramFilter !== 'all' && isAuthorized ? `
+                                            ${progF !== 'all' && isAuthorized ? `
                                             <td class="p-2 text-center text-xs sticky right-0 bg-white col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">
                                                 <div class="flex flex-row justify-center gap-2 items-center">
                                                     <button onclick="showEditTargetPeraihanForm('${row.id}')" class="text-blue-600 font-bold hover:text-blue-800 uppercase text-[9px]">EDIT</button>
@@ -2794,7 +2812,7 @@
                                         <td class="p-2 text-center text-xs text-purple-700 bg-blue-50 font-mono tracking-tighter">${formatRupiah(totalTgtOmset)}</td>
                                         <td class="p-2 text-center text-xs text-emerald-700 font-mono tracking-tighter">${formatRupiah(totalRelOmset)}</td>
                                         <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono tracking-tighter">${formatRupiah(Math.max(0, totalOmsetGap))}</td>
-                                        ${selectedProgramFilter !== 'all' && isAuthorized ? '<td class="bg-slate-100"></td>' : ''}
+                                        ${progF !== 'all' && isAuthorized ? '<td class="bg-slate-100"></td>' : ''}
                                     </tr>
                                 </tfoot>
                             </table>
@@ -2999,6 +3017,8 @@
             const content = document.getElementById('main-content');
             const isEdit = !!editData;
             const allPrograms = getAllProgramsList();
+            
+            const monthF = selectedMonthFilter || 'all';
 
             content.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl max-w-full mx-auto border border-blue-200 font-['Poppins']">
@@ -3016,7 +3036,7 @@
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Bulan</label>
                                 <select name="bulan" id="tm-bulan" required class="w-full px-4 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
@@ -3172,33 +3192,38 @@
 
             let filteredData = currentData.filter(d => d.module === 'data-leads' && d.wilayah === location);
             
-            if (selectedStatusFilter === 'not_closing') {
+            const statusF = selectedStatusFilter || 'all';
+            const progF = selectedProgramFilter || 'all';
+            const monthF = selectedMonthFilter || 'all';
+            const yearF = selectedYearFilter || 'all';
+
+            if (statusF === 'not_closing') {
                 filteredData = filteredData.filter(d => !d.is_closing);
-            } else if (selectedStatusFilter === 'is_closing') {
+            } else if (statusF === 'is_closing') {
                 filteredData = filteredData.filter(d => d.is_closing);
             }
 
             const allPrograms = getLeadsProgramsList();
 
-            if (selectedProgramFilter !== 'all') {
-                filteredData = filteredData.filter(d => d.program === selectedProgramFilter);
+            if (progF !== 'all') {
+                filteredData = filteredData.filter(d => d.program === progF);
             }
 
-            if (selectedMonthFilter !== 'all') {
+            if (monthF !== 'all') {
                 filteredData = filteredData.filter(d => {
                     const dDate = d.tanggal_input || d.createdAt;
                     if (!dDate) return false;
                     const month = new Date(dDate).getMonth() + 1;
-                    return month == selectedMonthFilter;
+                    return month == monthF;
                 });
             }
 
-            if (selectedYearFilter !== 'all') {
+            if (yearF !== 'all') {
                 filteredData = filteredData.filter(d => {
                     const dDate = d.tanggal_input || d.createdAt;
                     if (!dDate) return false;
                     const year = new Date(dDate).getFullYear();
-                    return year == selectedYearFilter;
+                    return year == yearF;
                 });
             }
 
@@ -3216,30 +3241,30 @@
                             <div class="flex items-center gap-2">
                                 <select id="status-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedStatusFilter === 'all' ? 'selected' : ''}>Semua Status</option>
-                                    <option value="not_closing" ${selectedStatusFilter === 'not_closing' ? 'selected' : ''}>Belum Closing</option>
-                                    <option value="is_closing" ${selectedStatusFilter === 'is_closing' ? 'selected' : ''}>Sudah Closing</option>
+                                    <option value="all" ${statusF === 'all' ? 'selected' : ''}>Semua Status</option>
+                                    <option value="not_closing" ${statusF === 'not_closing' ? 'selected' : ''}>Belum Closing</option>
+                                    <option value="is_closing" ${statusF === 'is_closing' ? 'selected' : ''}>Sudah Closing</option>
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="program-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedProgramFilter === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${selectedProgramFilter === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedMonthFilter === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${selectedMonthFilter == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="year-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
-                                    <option value="all" ${selectedYearFilter === 'all' ? 'selected' : ''}>Semua Tahun</option>
-                                    ${generateYearOptionsForFilter(selectedYearFilter)}
+                                    <option value="all" ${yearF === 'all' ? 'selected' : ''}>Semua Tahun</option>
+                                    ${generateYearOptionsForFilter(yearF)}
                                 </select>
                             </div>
                             ${isAuthorized ? `
@@ -3286,7 +3311,7 @@
                                         <tr><td colspan="${isAuthorized ? '16' : '15'}" class="p-8 text-center text-blue-600 font-medium tracking-tight"></td></tr>
                                         ` : filteredData.map((lead, idx) => {
                                             const infoDari = Array.isArray(lead.info_villa_merah_dari) ? lead.info_villa_merah_dari.join(', ') : (lead.info_villa_merah_dari || '-');
-                                            const platform = Array.isArray(lead.platform_medsos) ? lead.platform_medsos.join(', ') : (lead.platform_medsos || '-');
+                                            const platform = Array.isArray(lead.platform_medsos) ? l.platform_medsos.join(', ') : (l.platform_medsos || '-');
                                             const isClosingStatus = lead.is_closing || lead.status_crm === 'Deal';
                                             return `
                                         <tr class="border-b border-blue-100 hover:bg-blue-50 text-gray-700 transition-colors ${isClosingStatus ? 'bg-emerald-50' : ''}">
@@ -3489,7 +3514,8 @@
             const matches = currentData.filter(d => {
                 const dt = new Date(d.createdAt);
                 const isMonthMatch = (dt.getMonth() + 1) === m;
-                const isYearMatch = selectedYear === 'all' || dt.getFullYear() == selectedYear;
+                const yrF = selectedYear || 'all';
+                const isYearMatch = yrF === 'all' || dt.getFullYear() == yrF;
                 return d.module === 'data-siswa' && isMonthMatch && isYearMatch;
             });
 
