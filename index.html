@@ -194,8 +194,9 @@
             return [...new Set(programDatabase)].sort();
         }
 
+        // PERBAIKAN: Inisialisasi default agar tidak undefined
         let selectedProgramFilter = 'all';
-        let selectedYearFilter = 'all'; 
+        let selectedYearFilter = new Date().getFullYear().toString(); 
         let selectedMonthFilter = (new Date().getMonth() + 1).toString(); 
         let selectedLocationFilter = 'all'; 
         let selectedStatusFilter = 'all'; 
@@ -256,7 +257,7 @@
                                     <tbody class="divide-y divide-gray-100">
                                         ${programDatabase.sort().map((prog, idx) => `
                                             <tr class="hover:bg-gray-50">
-                                                <td class="p-3 font-medium text-gray-700 uppercase">${prog}</td>
+                                                <td class="p-3 font-medium text-gray-700 uppercase">${prog || '-'}</td>
                                                 <td class="p-3">
                                                     <div class="flex justify-center gap-4">
                                                         <button onclick="editMasterProgram('${prog}')" class="text-blue-600 hover:underline font-bold text-xs uppercase tracking-tight">Edit</button>
@@ -333,13 +334,13 @@
 
                     return {
                         "NO": idx + 1,
-                        "NAMA SISWA": s.nama,
+                        "NAMA SISWA": s.nama || '-',
                         "TEMPAT TANGGAL LAHIR": s.ttl || '-',
-                        "ASAL SEKOLAH": s.asal_sekolah,
+                        "ASAL SEKOLAH": s.asal_sekolah || '-',
                         "KELAS": s.kelas || '-',
                         "ALAMAT": s.alamat_siswa || '-',
                         "KOTA/KAB ASAL": s.asal_kota || '-',
-                        "PROGRAM": s.program,
+                        "PROGRAM": s.program || '-',
                         "MEDIA SOSIAL": platform,
                         "NAMA AKUN": s.nama_medsos || '-',
                         "INFORMASI VILLA MERAH DARI": infoDari,
@@ -359,9 +360,9 @@
                     
                     return {
                         "NO": idx + 1,
-                        "NAMA SISWA": l.nama_siswa,
+                        "NAMA SISWA": l.nama_siswa || '-',
                         "TEMPAT TANGGAL LAHIR": l.ttl || '-',
-                        "ASAL SEKOLAH": l.asal_sekolah,
+                        "ASAL SEKOLAH": l.asal_sekolah || '-',
                         "KELAS": l.kelas || '-',
                         "ALAMAT": l.alamat || '-',
                         "KOTA/KAB ASAL": l.asal_kota || '-',
@@ -471,6 +472,7 @@
         function formatTanggalExport(dateStr) {
             if (!dateStr || dateStr === '-') return '-';
             const d = new Date(dateStr);
+            if(isNaN(d.getTime())) return '-';
             return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
 
@@ -479,7 +481,7 @@
                 handler.onDataChanged(currentData);
             },
             create: async (data) => {
-                const newData = { ...data, __backendId: Date.now().toString() };
+                const newData = { ...data, __backendId: Date.now().toString() + Math.random() };
                 currentData.push(newData);
                 localStorage.setItem('vmi_app_data', JSON.stringify(currentData));
                 saveLog(`Menambah data pada modul ${data.module || 'Unknown'}`);
@@ -545,7 +547,7 @@
             if (!username) return;
             const user = userDatabase.find(x => x.username === username.toLowerCase());
             if (user) {
-                alert(`Halo ${user.name},\n\nUntuk keamanan, silakan hubungi SUPER ADMIN untuk mereset password Anda.\n\nSebutkan ID User Anda: ${user.id}`);
+                alert(`Halo ${user.name || 'User'},\n\nUntuk keamanan, silakan hubungi SUPER ADMIN untuk mereset password Anda.\n\nSebutkan ID User Anda: ${user.id}`);
             } else {
                 alert("Username tidak ditemukan dalam sistem.");
             }
@@ -616,10 +618,10 @@
                                     return `
                                     <tr class="border-b">
                                         <td class="p-3 text-center font-mono">${idx + 1}</td>
-                                        <td class="p-3 uppercase font-bold text-left">${u.name}</td>
-                                        <td class="p-3">${u.username}</td>
-                                        <td class="p-3 text-gray-400 font-mono">${u.password}</td>
-                                        <td class="p-3 uppercase text-xs font-bold ${u.role==='admin'||u.role==='super admin'?'text-red-600':'text-green-600'}">${u.role}</td>
+                                        <td class="p-3 uppercase font-bold text-left">${u.name || '-'}</td>
+                                        <td class="p-3">${u.username || '-'}</td>
+                                        <td class="p-3 text-gray-400 font-mono">${u.password || '-'}</td>
+                                        <td class="p-3 uppercase text-xs font-bold ${u.role==='admin'||u.role==='super admin'?'text-red-600':'text-green-600'}">${u.role || '-'}</td>
                                         <td class="p-3 uppercase text-xs font-bold text-blue-600">${u.wilayah || 'Semua'}</td>
                                         <td class="p-3 text-center">
                                             <div class="flex flex-row justify-center gap-3">
@@ -671,15 +673,15 @@
                         <input type="hidden" id="n-id" value="${isEdit ? editData.id : ''}">
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Nama Lengkap</label>
-                            <input type="text" id="n-name" value="${isEdit ? editData.name : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Nama Lengkap" class="w-full p-2 border rounded">
+                            <input type="text" id="n-name" value="${isEdit ? (editData.name || '') : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Nama Lengkap" class="w-full p-2 border rounded">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Username</label>
-                            <input type="text" id="n-user" value="${isEdit ? editData.username : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Username" class="w-full p-2 border rounded">
+                            <input type="text" id="n-user" value="${isEdit ? (editData.username || '') : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Username" class="w-full p-2 border rounded">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
-                            <input type="text" id="n-pass" value="${isEdit ? editData.password : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Password" class="w-full p-2 border rounded">
+                            <input type="text" id="n-pass" value="${isEdit ? (editData.password || '') : ''}" ${isRestricted ? 'disabled' : ''} placeholder="Password" class="w-full p-2 border rounded">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -695,7 +697,7 @@
                             <div id="container-wilayah" class="${hideWilayahClass}">
                                 <label class="text-xs font-bold text-gray-500 uppercase">Wilayah Tugas</label>
                                 <select id="n-wilayah" ${isRestricted ? 'disabled' : ''} class="w-full p-2 border rounded">
-                                    ${daftarWilayahMaster.map(w => `<option value="${w}" ${isEdit && editData.wilayah === w ? 'selected' : ''}>${w}</option>`).join('')}
+                                    ${daftarWilayahMaster.map(w => `<option value="${w}" ${isEdit && editData.wilayah === w ? 'selected' : ''}>${w || 'Semua'}</option>`).join('')}
                                 </select>
                             </div>
                         </div>
@@ -804,12 +806,12 @@
                                   activityLogs.map((log, idx) => `
                                     <tr class="border-b hover:bg-blue-50">
                                         <td class="p-3 text-center font-mono">${idx + 1}</td>
-                                        <td class="p-3 font-bold uppercase text-left">${log.userName}</td>
-                                        <td class="p-3 uppercase text-[10px] font-bold ${log.role==='admin'||log.role==='super admin'?'text-red-600':'text-green-600'}">${log.role}</td>
-                                        <td class="p-3 italic text-gray-600 text-left">${log.action}</td>
-                                        <td class="p-3 text-center">${log.date}</td>
-                                        <td class="p-3 text-center">${log.day}</td>
-                                        <td class="p-3 text-center font-mono">${log.time}</td>
+                                        <td class="p-3 font-bold uppercase text-left">${log.userName || '-'}</td>
+                                        <td class="p-3 uppercase text-[10px] font-bold ${log.role==='admin'||log.role==='super admin'?'text-red-600':'text-green-600'}">${log.role || '-'}</td>
+                                        <td class="p-3 italic text-gray-600 text-left">${log.action || '-'}</td>
+                                        <td class="p-3 text-center">${log.date || '-'}</td>
+                                        <td class="p-3 text-center">${log.day || '-'}</td>
+                                        <td class="p-3 text-center font-mono">${log.time || '-'}</td>
                                     </tr>`).join('')}
                             </tbody>
                         </table>
@@ -832,7 +834,7 @@
         let currentModule = 'dashboard';
         let currentSubModule = '';
         let charts = {};
-        let selectedYear = 'all';
+        let selectedYear = new Date().getFullYear().toString();
         
         const menuItems = [
             { id: 'dashboard', name: 'Dashboard', icon: 'dashboard' },
@@ -864,7 +866,7 @@
             document.getElementById('top-header').classList.remove('hidden');
             document.getElementById('sidebar-container').classList.remove('hidden');
             
-            document.getElementById('header-user-display').textContent = `${currentUser.name}`;
+            document.getElementById('header-user-display').textContent = `${currentUser.name || 'User'}`;
 
             const nav = document.getElementById('sidebar-nav');
             let visibleMenu = menuItems.filter(item => {
@@ -882,7 +884,7 @@
                             <span class="material-symbols-rounded ${currentModule === item.id ? 'text-white active-icon' : 'text-gray-500'}">
                                 ${item.icon}
                             </span>
-                            <span class="text-sm font-semibold ${currentModule === item.id ? 'text-white' : 'text-gray-700'}">${item.name}</span>
+                            <span class="text-sm font-semibold ${currentModule === item.id ? 'text-white' : 'text-gray-700'}">${item.name || '-'}</span>
                         </div>
                     </div>
                     ${item.submenus && currentModule === item.id ? `
@@ -893,7 +895,7 @@
                                      onclick="navigateTo('${item.id}', '${sub}')">
                                     <div class="flex items-center gap-2">
                                         <div class="w-1.5 h-1.5 rounded-full ${currentSubModule === sub ? 'bg-white' : 'bg-gray-400'}"></div>
-                                        <span class="text-xs font-medium ${currentSubModule === sub ? 'text-white' : 'text-gray-600'}">${sub}</span>
+                                        <span class="text-xs font-medium ${currentSubModule === sub ? 'text-white' : 'text-gray-600'}">${sub || '-'}</span>
                                     </div>
                                 </div>`;
                             }).join('')}
@@ -903,20 +905,20 @@
             `).join('');
         }
         
+        // PERBAIKAN: Fungsi navigasi agar filter tidak undefined
         function navigateTo(module, submodule = '') {
             currentModule = module;
-            currentSubModule = submodule;
+            currentSubModule = submodule || '';
             
             // Set default value jika filter bernilai undefined
             selectedProgramFilter = selectedProgramFilter || 'all';
             selectedStatusFilter = selectedStatusFilter || 'all'; 
             
-            const currentSystemYear = new Date().getFullYear();
-            const defaultStartYear = "2026";
+            const currentSystemYear = new Date().getFullYear().toString();
             
             if (module === 'crm-followup' || module === 'target-peraihan') {
-                selectedYearFilter = (currentSystemYear < 2026 ? defaultStartYear : currentSystemYear.toString());
-                selectedMonthFilter = (new Date().getMonth() + 1).toString();
+                selectedYearFilter = (selectedYearFilter && selectedYearFilter !== 'all') ? selectedYearFilter : currentSystemYear;
+                selectedMonthFilter = (selectedMonthFilter && selectedMonthFilter !== 'all') ? selectedMonthFilter : (new Date().getMonth() + 1).toString();
             } else {
                 selectedYearFilter = selectedYearFilter || 'all';
                 selectedMonthFilter = selectedMonthFilter || 'all';
@@ -984,12 +986,14 @@
             if (monthF !== 'all') {
                 leadsDataFiltered = leadsDataFiltered.filter(d => {
                     const tgl = d.tanggal_input || d.createdAt;
+                    if(!tgl) return false;
                     return (new Date(tgl).getMonth() + 1) == monthF;
                 });
             }
             if (yearF !== 'all') {
                 leadsDataFiltered = leadsDataFiltered.filter(d => {
                     const tgl = d.tanggal_input || d.createdAt;
+                    if(!tgl) return false;
                     return new Date(tgl).getFullYear() == yearF;
                 });
             }
@@ -1018,10 +1022,10 @@
                         <div class="flex flex-wrap gap-3">
                             <select id="program-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
                                 <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
-                                ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                             </select>
                             <select id="month-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m || '-'}</option>`).join('')}
                             </select>
                             <select id="year-filter-crm" onchange="applyCRMFilter()" class="px-3 py-2 rounded bg-white border border-blue-300 text-xs font-normal uppercase shadow-sm outline-none focus:ring-2 focus:ring-blue-400">
                                 <option value="all" ${yearF === 'all' ? 'selected' : ''}>Semua Tahun</option>
@@ -1112,14 +1116,14 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAuthorized ? '10' : '9'}" class="p-10 text-center text-gray-400"></td></tr>` : 
+                                    ${leadsDataFiltered.length === 0 ? `<tr><td colspan="${isAuthorized ? '10' : '9'}" class="p-10 text-center text-gray-400">Belum ada data leads untuk periode ini</td></tr>` : 
                                       leadsDataFiltered.map((lead, idx) => {
                                         let statusTampil = lead.status_crm === 'Deal' ? 'Closing' : (lead.status_crm || 'Pending');
                                         const programTampil = lead.status_crm === 'Deal' ? (lead.program_pendidikan || lead.program) : lead.program;
                                         return `
                                         <tr class="border-b border-slate-100 hover:bg-blue-50 transition-all">
                                             <td class="p-3 text-center font-mono text-[10px]">${idx + 1}</td>
-                                            <td class="p-3 font-black uppercase text-slate-800 text-xs">${lead.nama_siswa}</td>
+                                            <td class="p-3 font-black uppercase text-slate-800 text-xs">${lead.nama_siswa || '-'}</td>
                                             <td class="p-3 text-[10px] uppercase text-slate-600">${lead.asal_sekolah || '-'}</td>
                                             <td class="p-3 text-center text-[10px] uppercase text-slate-600">${lead.kelas || '-'}</td>
                                             <td class="p-3 text-[10px] font-bold text-blue-700 uppercase">${programTampil || '-'}</td>
@@ -1129,7 +1133,7 @@
                                                       statusTampil === 'Hot' ? 'bg-rose-500 text-white' : 
                                                       statusTampil === 'Cold' ? 'bg-slate-400 text-white' :
                                                       'bg-sky-500 text-white'}">
-                                                    ${statusTampil}
+                                                    ${statusTampil || '-'}
                                                 </span>
                                             </td>
                                             <td class="p-3 text-center font-mono text-[10px] font-black ${lead.tgl_followup && isOverdue(lead.tgl_followup) ? 'text-rose-600 bg-rose-50 rounded-lg' : 'text-slate-600'}">
@@ -1210,14 +1214,16 @@
 
                 if(item.status_crm === 'Deal' || item.is_closing === true) {
                     const tglClosingStr = item.tanggal_closing || item.tanggal_input || item.createdAt;
-                    const dCl = new Date(tglClosingStr);
-                    const isYearMatchCl = (!selectedYearFilter || selectedYearFilter === 'all') || dCl.getFullYear() == selectedYearFilter;
-                    const isMonthMatchCl = (!selectedMonthFilter || selectedMonthFilter === 'all') || (dCl.getMonth() + 1) == selectedMonthFilter;
+                    if(tglClosingStr) {
+                        const dCl = new Date(tglClosingStr);
+                        const isYearMatchCl = (!selectedYearFilter || selectedYearFilter === 'all') || dCl.getFullYear() == selectedYearFilter;
+                        const isMonthMatchCl = (!selectedMonthFilter || selectedMonthFilter === 'all') || (dCl.getMonth() + 1) == selectedMonthFilter;
 
-                    if(isYearMatchCl && isMonthMatchCl) {
-                        const dayCl = dCl.getDate();
-                        if(dayCl >= 1 && dayCl <= daysInMonth) {
-                            stats.daily.closing[dayCl-1]++;
+                        if(isYearMatchCl && isMonthMatchCl) {
+                            const dayCl = dCl.getDate();
+                            if(dayCl >= 1 && dayCl <= daysInMonth) {
+                                stats.daily.closing[dayCl-1]++;
+                            }
                         }
                     }
                 }
@@ -1372,7 +1378,7 @@
                     <div class="space-y-4">
                         <div class="text-left">
                             <label class="text-xs font-bold text-gray-500 uppercase">Nama Siswa</label>
-                            <p class="font-bold text-gray-800 uppercase text-sm">${lead.nama_siswa}</p>
+                            <p class="font-bold text-gray-800 uppercase text-sm">${lead.nama_siswa || '-'}</p>
                         </div>
                         <div class="text-left">
                             <label class="text-xs font-bold text-gray-500 uppercase">Status Prospek</label>
@@ -1390,7 +1396,7 @@
                                 <label class="text-xs font-bold text-green-700 uppercase">Program Pendidikan (Wajib)</label>
                                 <select id="crm-program-siswa" class="w-full p-2 border border-green-300 rounded outline-none focus:ring-2 focus:ring-blue-400">
                                     <option value="">Pilih Program Kelas</option>
-                                    ${listProgramSiswa.map(prog => `<option value="${prog}">${prog}</option>`).join('')}
+                                    ${listProgramSiswa.map(prog => `<option value="${prog}">${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
@@ -1471,12 +1477,12 @@
 
                     const payloadSiswa = {
                         module: 'data-siswa',
-                        location: leadData.wilayah,
+                        location: leadData.wilayah || 'Bandung',
                         fromLeadsId: backendId, 
-                        nama: leadData.nama_siswa,
+                        nama: leadData.nama_siswa || '-',
                         ttl: leadData.ttl || '-',
-                        no_hp_siswa: leadData.no_hp,
-                        asal_sekolah: leadData.asal_sekolah,
+                        no_hp_siswa: leadData.no_hp || '-',
+                        asal_sekolah: leadData.asal_sekolah || '-',
                         kelas: leadData.kelas || '-',
                         asal_kota: leadData.asal_kota || '-',
                         program: programDeal, 
@@ -1513,6 +1519,7 @@
 
             if (yrF !== 'all') {
                 dataSiswa = dataSiswa.filter(siswa => {
+                    if(!siswa.createdAt) return false;
                     const createdDate = new Date(siswa.createdAt);
                     return createdDate.getFullYear() == yrF;
                 });
@@ -1570,7 +1577,7 @@
                     
                     <div class="lg:col-span-1 bg-indigo-500 rounded-2xl p-6 shadow-xl text-center flex flex-col justify-center">
                         <h3 class="text-indigo-50 text-xs font-black mb-2 uppercase tracking-widest">Total Siswa</h3>
-                        <div class="text-4xl font-bold text-white break-words" id="total-siswa-card">${olapData.summary.totalSiswa}</div>
+                        <div class="text-4xl font-bold text-white break-words" id="total-siswa-card">${olapData.summary.totalSiswa || 0}</div>
                         <div class="text-[10px] text-indigo-100 mt-2 font-bold uppercase">Siswa Tercapai</div>
                     </div>
                 </div>
@@ -1640,7 +1647,7 @@
             let options = '';
             
             for (let year = startYear; year <= endYear; year++) {
-                options += `<option value="${year}" ${currVal == year ? 'selected' : ''}>${year}</option>`;
+                options += `<option value="${year}" ${currVal == year ? 'selected' : ''}>${year || '-'}</option>`;
             }
             
             return options;
@@ -1663,6 +1670,7 @@
             const dataSiswaArr = new Array(12).fill(0);
             
             filteredDataSiswa.forEach(siswa => {
+                if(!siswa.createdAt) return;
                 const createdDate = new Date(siswa.createdAt);
                 const monthIndex = createdDate.getMonth(); 
                 dataSiswaArr[monthIndex] += 1;
@@ -1714,6 +1722,7 @@
             const dataOmsetArr = new Array(12).fill(0);
             
             filteredDataSiswa.forEach(siswa => {
+                if(!siswa.createdAt) return;
                 const createdDate = new Date(siswa.createdAt);
                 const monthIndex = createdDate.getMonth(); 
                 const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
@@ -1772,7 +1781,6 @@
             });
         }
 
-        // Dashboard parameter isIgnoreMonth ditambahkan
         function generateOLAPFromData(dataSiswa, isIgnoreMonth = false) {
             if (dataSiswa.length === 0) {
                 return {
@@ -1817,6 +1825,7 @@
             const locationPendingReal = { bandung: 0, jaksel: 0, jaktim: 0 };
             
             dataSiswa.forEach(siswa => {
+                if(!siswa.createdAt) return;
                 const createdDate = new Date(siswa.createdAt);
                 const month = createdDate.getMonth() + 1;
                 const year = createdDate.getFullYear();
@@ -1834,7 +1843,7 @@
                 
                 if (!monthlyMap[key]) {
                     monthlyMap[key] = {
-                        periode: `${daftarNamaBulan[month]} ${year}`,
+                        periode: `${daftarNamaBulan[month] || '-'} ${year}`,
                         periode_raw: key,
                         siswaBaru: 0,
                         omset_raw: 0,
@@ -1849,21 +1858,22 @@
                 monthlyMap[key].siswaBaru += 1;
                 monthlyMap[key].omset_raw += omsetMasuk;
                 
-                if (siswa.location === 'Bandung') {
+                const currentLoc = (siswa.location || '').toLowerCase();
+                if (currentLoc.includes('bandung')) {
                     monthlyMap[key].bandung += 1;
                     locationCounts.bandung += 1;
                     locationOmsetReal.bandung += omsetMasuk;
                     locationPendingReal.bandung += sisa;
                     locCityCounts.bandung[kotaSiswa] = (locCityCounts.bandung[kotaSiswa] || 0) + 1;
                     locSchoolCounts.bandung[sekolahSiswa] = (locSchoolCounts.bandung[sekolahSiswa] || 0) + 1;
-                } else if (siswa.location === 'Jakarta Selatan') {
+                } else if (currentLoc.includes('selatan')) {
                     monthlyMap[key].jaksel += 1;
                     locationCounts.jaksel += 1;
                     locationOmsetReal.jaksel += omsetMasuk;
                     locationPendingReal.jaksel += sisa;
                     locCityCounts.jaksel[kotaSiswa] = (locCityCounts.jaksel[kotaSiswa] || 0) + 1;
                     locSchoolCounts.jaksel[sekolahSiswa] = (locSchoolCounts.jaksel[sekolahSiswa] || 0) + 1;
-                } else if (siswa.location === 'Jakarta Timur') {
+                } else if (currentLoc.includes('timur')) {
                     monthlyMap[key].jaktim += 1;
                     locationCounts.jaktim += 1;
                     locationOmsetReal.jaktim += omsetMasuk;
@@ -2021,7 +2031,7 @@
                                     const label = context.label || '';
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
                                     return `${label}: ${value} (${percentage})`;
                                 }
                             }
@@ -2080,7 +2090,7 @@
                                     const label = context.label || '';
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
                                     return `${label}: ${value} (${percentage})`;
                                 }
                             }
@@ -2138,7 +2148,7 @@
                                     const label = context.label || '';
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
                                     return `${label}: ${value} (${percentage})`;
                                 }
                             }
@@ -2155,7 +2165,7 @@
             const isAuthorized = (currentUser.role === 'super admin') || 
                                  (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
 
-            let filteredData = currentData.filter(d => d.module === 'data-siswa' && d.location === location);
+            let filteredData = currentData.filter(d => d.module === 'data-siswa' && (d.location || '').includes(location));
             
             const allPrograms = getAllProgramsList();
             
@@ -2169,6 +2179,7 @@
 
             if (yearF !== 'all') {
                 filteredData = filteredData.filter(d => {
+                    if(!d.createdAt) return false;
                     const year = new Date(d.createdAt).getFullYear();
                     return year == yearF;
                 });
@@ -2176,6 +2187,7 @@
 
             if (monthF !== 'all') {
                 filteredData = filteredData.filter(d => {
+                    if(!d.createdAt) return false;
                     const month = new Date(d.createdAt).getMonth() + 1;
                     return month == monthF;
                 });
@@ -2197,14 +2209,14 @@
                                 <select id="program-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
                                     <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter" onchange="applyDataSiswaFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
                                     <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
@@ -2263,21 +2275,21 @@
                                     return `
                                     <tr class="border-b border-blue-200 hover:bg-blue-50 text-gray-700">
                                         <td class="p-1 text-center text-[9px] uppercase font-mono">${idx + 1}</td>
-                                        <td class="p-1 text-left text-[9px] uppercase font-bold text-black" title="${siswa.nama}">${siswa.nama}</td>
+                                        <td class="p-1 text-left text-[9px] uppercase font-bold text-black" title="${siswa.nama || '-'}">${siswa.nama || '-'}</td>
                                         <td class="p-1 text-left text-[9px] uppercase font-semibold text-blue-800" title="${siswa.ttl || '-'}">${siswa.ttl || '-'}</td>
-                                        <td class="p-1 text-left text-[9px] uppercase" title="${siswa.asal_sekolah}">${siswa.asal_sekolah}</td>
-                                        <td class="p-1 text-center text-[9px] uppercase" title="${siswa.kelas}">${siswa.kelas || '-'}</td>
+                                        <td class="p-1 text-left text-[9px] uppercase" title="${siswa.asal_sekolah || '-'}">${siswa.asal_sekolah || '-'}</td>
+                                        <td class="p-1 text-center text-[9px] uppercase" title="${siswa.kelas || '-'}">${siswa.kelas || '-'}</td>
                                         <td class="p-1 text-left text-[9px] uppercase allow-wrap" title="${siswa.alamat_siswa || '-'}">${siswa.alamat_siswa || '-'}</td>
                                         <td class="p-1 text-left text-[9px] uppercase" title="${siswa.asal_kota || '-'}">${siswa.asal_kota || '-'}</td>
-                                        <td class="p-1 text-left text-[9px] uppercase font-bold text-black" title="${siswa.program}">${siswa.program}</td>
+                                        <td class="p-1 text-left text-[9px] uppercase font-bold text-black" title="${siswa.program || '-'}">${siswa.program || '-'}</td>
                                         <td class="p-1 text-left text-[9px] uppercase">
-                                            <span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-[8px] font-bold uppercase whitespace-nowrap tracking-tight">${platform}</span>
+                                            <span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-[8px] font-bold uppercase whitespace-nowrap tracking-tight">${platform || '-'}</span>
                                         </td>
                                         <td class="p-1 text-left text-[9px] uppercase" title="${siswa.nama_medsos || '-'}">${siswa.nama_medsos || '-'}</td>
-                                        <td class="p-1 text-left text-[9px] uppercase allow-wrap" title="${infoDari}">${infoDari}</td>
+                                        <td class="p-1 text-left text-[9px] uppercase allow-wrap" title="${infoDari || '-'}">${infoDari || '-'}</td>
                                         <td class="p-1 text-center text-[9px] font-mono">${siswa.no_hp_siswa || '-'}</td>
-                                        <td class="p-1 text-left text-[9px] uppercase" title="${siswa.nama_ortu}">${siswa.nama_ortu}</td>
-                                        <td class="p-1 text-center text-[9px] font-mono">${siswa.no_tlp_ortu}</td>
+                                        <td class="p-1 text-left text-[9px] uppercase" title="${siswa.nama_ortu || '-'}">${siswa.nama_ortu || '-'}</td>
+                                        <td class="p-1 text-center text-[9px] font-mono">${siswa.no_tlp_ortu || '-'}</td>
                                         <td class="p-1 text-center text-[9px] font-semibold">${formatTanggal(siswa.createdAt)}</td>
                                         <td class="p-1 text-left text-[9px] font-semibold text-blue-600">${formatRupiah(siswa.biaya_pendidikan)}</td>
                                         <td class="p-1 text-left text-[9px] font-semibold text-green-600">${formatRupiah(realPay)}</td>
@@ -2292,9 +2304,7 @@
                                     </tr>
                                 `}).join('')}
                                 ${filteredData.length === 0 ? `
-                                    <tr><td colspan="${isAuthorized ? '18' : '17'}" class="p-8 text-center text-blue-600">
-                                        
-                                    </td></tr>
+                                    <tr><td colspan="${isAuthorized ? '19' : '18'}" class="p-8 text-center text-blue-600">Belum ada data siswa untuk periode ini</td></tr>
                                 ` : ''}
                             </tbody>
                         </table>
@@ -2315,7 +2325,7 @@
             const endYear = 2035; 
             let options = '';
             for (let year = startYear; year <= endYear; year++) {
-                options += `<option value="${year}" ${currentSelected == year ? 'selected' : ''}>${year}</option>`;
+                options += `<option value="${year}" ${currentSelected == year ? 'selected' : ''}>${year || '-'}</option>`;
             }
             return options;
         }
@@ -2327,13 +2337,13 @@
         function showEditSiswaForm(backendId) {
             const siswa = currentData.find(d => d.__backendId === backendId);
             if (!siswa) return;
-            renderSiswaForm(siswa.location, siswa);
+            renderSiswaForm(siswa.location || 'Bandung', siswa);
         }
 
         function renderSiswaForm(location, editData = null) {
             const content = document.getElementById('main-content');
             const isEdit = !!editData;
-            const tglDefault = isEdit ? new Date(editData.createdAt).toISOString().split('T')[0] : '';
+            const tglDefault = isEdit && editData.createdAt ? new Date(editData.createdAt).toISOString().split('T')[0] : '';
             const platforms = ['Instagram', 'TikTok', 'Twitter', 'YouTube', 'Lainnya'];
             
             const listProgramKelas = getAllProgramsList();
@@ -2346,7 +2356,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold text-left">Nama Siswa</label>
-                                <input type="text" name="nama" value="${isEdit ? editData.nama : ''}" required 
+                                <input type="text" name="nama" value="${isEdit ? (editData.nama || '') : ''}" required 
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
@@ -2361,12 +2371,12 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold text-left">Asal Sekolah</label>
-                                <input type="text" name="asal_sekolah" value="${isEdit ? editData.asal_sekolah : ''}" required 
+                                <input type="text" name="asal_sekolah" value="${isEdit ? (editData.asal_sekolah || '') : ''}" required 
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold text-left">Kelas</label>
-                                <input type="text" name="kelas" value="${isEdit ? editData.kelas : ''}" required placeholder="Misal: 12 IPA 1"
+                                <input type="text" name="kelas" value="${isEdit ? (editData.kelas || '') : ''}" required placeholder="Misal: 12 IPA 1"
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
@@ -2379,7 +2389,7 @@
                                 <select name="program" required 
                                         class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                                     <option value="">Pilih Program Kelas</option>
-                                    ${listProgramKelas.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${listProgramKelas.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div>
@@ -2394,12 +2404,12 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold text-left">Nama Orang Tua</label>
-                                <input type="text" name="nama_ortu" value="${isEdit ? editData.nama_ortu : ''}" required 
+                                <input type="text" name="nama_ortu" value="${isEdit ? (editData.nama_ortu || '') : ''}" required 
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold text-left">No Telepon Orang Tua</label>
-                                <input type="text" name="no_tlp_ortu" value="${isEdit ? editData.no_tlp_ortu : ''}" required 
+                                <input type="text" name="no_tlp_ortu" value="${isEdit ? (editData.no_tlp_ortu || '') : ''}" required 
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
@@ -2409,7 +2419,7 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-1 text-sm font-semibold uppercase text-left tracking-tighter">Biaya Pendidikan</label>
-                                <input type="text" id="input-biaya" name="biaya_pendidikan" value="${isEdit ? parseInt(editData.biaya_pendidikan).toLocaleString('id-ID') : ''}" placeholder="20.000.000" required
+                                <input type="text" id="input-biaya" name="biaya_pendidikan" value="${isEdit && editData.biaya_pendidikan ? parseInt(editData.biaya_pendidikan).toLocaleString('id-ID') : ''}" placeholder="20.000.000" required
                                        class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
                             <div>
@@ -2427,7 +2437,7 @@
                                         <label class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1 rounded transition-colors text-[10px]">
                                             <input type="checkbox" name="info_villa_merah_dari" value="${info}" class="siswa-info-checkbox h-3 w-3" 
                                                 ${isEdit && editData.info_villa_merah_dari && editData.info_villa_merah_dari.includes(info) ? 'checked' : ''}>
-                                            <span class="whitespace-nowrap">${info}</span>
+                                            <span class="whitespace-nowrap">${info || '-'}</span>
                                         </label>
                                     `).join('')}
                                 </div>
@@ -2440,7 +2450,7 @@
                                         <label class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1 rounded transition-colors text-[10px]">
                                             <input type="checkbox" name="platform_medsos" value="${p}" class="siswa-platform-checkbox h-3 w-3" 
                                                 ${isEdit && editData.platform_medsos && editData.platform_medsos.includes(p) ? 'checked' : ''}>
-                                            <span class="whitespace-nowrap">${p}</span>
+                                            <span class="whitespace-nowrap">${p || '-'}</span>
                                         </label>
                                     `).join('')}
                                 </div>
@@ -2492,8 +2502,8 @@
                 const selectedInfo = Array.from(document.querySelectorAll('.siswa-info-checkbox:checked')).map(cb => cb.value);
                 
                 const tgl = formData.get('tanggal_daftar');
-                const biayaVal = formData.get('biaya_pendidikan').replace(/\./g, '');
-                const bayarVal = formData.get('pembayaran').replace(/\./g, '');
+                const biayaVal = (formData.get('biaya_pendidikan') || '0').replace(/\./g, '');
+                const bayarVal = (formData.get('pembayaran') || '0').replace(/\./g, '');
                 
                 const sisaVal = (parseInt(biayaVal) || 0) - (parseInt(bayarVal) || 0);
                 
@@ -2512,7 +2522,7 @@
                     nama_ortu: formData.get('nama_ortu'),
                     no_tlp_ortu: formData.get('no_tlp_ortu'),
                     biaya_pendidikan: biayaVal,
-                    sisa_angsuran: sisaVal,
+                    sisa_angsuran: sisaVal.toString(),
                     createdAt: tgl ? new Date(tgl).toISOString() : new Date().toISOString()
                 };
 
@@ -2571,7 +2581,7 @@
             const allPrograms = getAllProgramsList();
             
             let filteredTargetData = currentData.filter(d => d.module === 'target-market' && d.wilayah === location);
-            let filteredSiswaData = currentData.filter(d => d.module === 'data-siswa' && d.location === location);
+            let filteredSiswaData = currentData.filter(d => d.module === 'data-siswa' && (d.location || '').includes(location));
 
             const progF = selectedProgramFilter || 'all';
             const yearF = selectedYearFilter || 'all';
@@ -2584,12 +2594,18 @@
             
             if (yearF !== 'all') {
                 filteredTargetData = filteredTargetData.filter(d => d.tahun == yearF);
-                filteredSiswaData = filteredSiswaData.filter(d => new Date(d.createdAt).getFullYear() == yearF);
+                filteredSiswaData = filteredSiswaData.filter(d => {
+                    if(!d.createdAt) return false;
+                    return new Date(d.createdAt).getFullYear() == yearF;
+                });
             }
 
             if (monthF !== 'all') {
                 filteredTargetData = filteredTargetData.filter(d => d.bulan == monthF);
-                filteredSiswaData = filteredSiswaData.filter(d => (new Date(d.createdAt).getMonth() + 1) == monthF);
+                filteredSiswaData = filteredSiswaData.filter(d => {
+                    if(!d.createdAt) return false;
+                    return (new Date(d.createdAt).getMonth() + 1) == monthF;
+                });
             }
 
             const chartData = generateTargetPeraihanChartData(filteredTargetData, progF, location);
@@ -2621,14 +2637,16 @@
                 const dailyOmset = new Array(daysInMonth).fill(0);
 
                 filteredSiswaData.forEach(siswa => {
+                    if(!siswa.createdAt) return;
                     const d = new Date(siswa.createdAt);
                     if ((d.getMonth() + 1) == monthF && d.getFullYear() == yearF) {
                         const dayIdx = d.getDate() - 1;
-                        dailyClosing[dayIdx]++;
-                        
-                        const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
-                        const sisa = parseFloat(siswa.sisa_angsuran || 0);
-                        dailyOmset[dayIdx] += (biaya - sisa);
+                        if(dayIdx >= 0 && dayIdx < daysInMonth) {
+                            dailyClosing[dayIdx]++;
+                            const biaya = parseFloat(siswa.biaya_pendidikan) || 0;
+                            const sisa = parseFloat(siswa.sisa_angsuran || 0);
+                            dailyOmset[dayIdx] += (biaya - sisa);
+                        }
                     }
                 });
 
@@ -2653,14 +2671,14 @@
                                 <select id="program-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
                                     <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter-tm" onchange="applyTMFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
                                     <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
@@ -2701,11 +2719,11 @@
                         </div>
                         <div class="flex-1 min-w-[120px] bg-[#FFC107] text-blue-900 p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
                             <div class="text-[10px] font-black uppercase text-blue-900/80 tracking-tighter whitespace-nowrap">Target Siswa</div>
-                            <div class="text-3xl font-bold mt-1 break-words">${chartData.summary.totalTargetSiswa}</div>
+                            <div class="text-3xl font-bold mt-1 break-words">${chartData.summary.totalTargetSiswa || 0}</div>
                         </div>
                         <div class="flex-1 min-w-[120px] bg-indigo-500 text-white p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
                             <div class="text-[10px] font-black uppercase text-indigo-50 tracking-tighter whitespace-nowrap">Siswa Tercapai</div>
-                            <div class="text-3xl font-bold mt-1 break-words">${chartData.summary.totalRealisasiSiswa}</div>
+                            <div class="text-3xl font-bold mt-1 break-words">${chartData.summary.totalRealisasiSiswa || 0}</div>
                         </div>
                     </div>
 
@@ -2785,10 +2803,10 @@
                                         return `
                                         <tr class="border-b border-blue-100 hover:bg-blue-50 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} text-gray-700">
                                             <td class="p-2 text-center text-xs font-mono">${idx + 1}</td> 
-                                            <td class="p-2 text-center text-xs uppercase font-mono tracking-tighter">${row.tahun}</td>
-                                            <td class="p-2 text-center text-xs font-bold uppercase text-blue-700 tracking-tight">${row.bulanName}</td>
-                                            <td class="p-2 text-center text-xs font-semibold text-blue-600 uppercase bg-blue-50/50 font-mono">${row.targetSiswa}</td>
-                                            <td class="p-2 text-center text-xs font-bold text-green-600 uppercase font-mono">${row.realSiswa}</td>
+                                            <td class="p-2 text-center text-xs uppercase font-mono tracking-tighter">${row.tahun || '-'}</td>
+                                            <td class="p-2 text-center text-xs font-bold uppercase text-blue-700 tracking-tight">${row.bulanName || '-'}</td>
+                                            <td class="p-2 text-center text-xs font-semibold text-blue-600 uppercase bg-blue-50/50 font-mono">${row.targetSiswa || 0}</td>
+                                            <td class="p-2 text-center text-xs font-bold text-green-600 uppercase font-mono">${row.realSiswa || 0}</td>
                                             <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono">${Math.max(0, siswaGap)}</td>
                                             <td class="p-2 text-center text-xs font-semibold text-purple-600 uppercase bg-blue-50/50 font-mono tracking-tighter">${formatRupiah(row.targetOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-emerald-600 uppercase font-mono tracking-tighter">${formatRupiah(row.realOmset)}</td>
@@ -2933,18 +2951,19 @@
                 aggregation[key].ids.push(item.__backendId);
             });
 
-            const allSiswa = currentData.filter(d => d.module === 'data-siswa' && d.location === currentLoc);
+            const allSiswa = currentData.filter(d => d.module === 'data-siswa' && (d.location || '').includes(currentLoc));
 
             Object.keys(aggregation).forEach(key => {
                 const data = aggregation[key];
                 
                 const realSiswaList = allSiswa.filter(s => {
                     if (programFilter !== 'all' && s.program !== programFilter) return false;
+                    if(!s.createdAt) return false;
                     const dSiswa = new Date(s.createdAt);
                     return (dSiswa.getMonth() + 1) == data.bulan && dSiswa.getFullYear() == data.tahun;
                 });
 
-                const uniqueSiswa = Array.from(new Map(realSiswaList.map(s => [s.nama.toLowerCase(), s])).values());
+                const uniqueSiswa = Array.from(new Map(realSiswaList.map(s => [s.nama ? s.nama.toLowerCase() : Math.random(), s])).values());
 
                 data.realSiswa = uniqueSiswa.length;
                 data.realOmset = uniqueSiswa.reduce((acc, s) => {
@@ -2955,15 +2974,16 @@
             });
 
             const sortedKeys = Object.keys(aggregation).sort((a, b) => {
-                const [m1, y1] = a.split('-'); const [m2, y2] = b.split('-');
-                return y1 !== y2 ? y1 - y2 : m1 - m2;
+                const partsA = a.split('-'); const partsB = b.split('-');
+                if(partsA[1] !== partsB[1]) return partsA[1] - partsB[1];
+                return partsA[0] - partsB[0];
             });
 
             const labels = [], targetSiswaData = [], realisasiSiswaData = [], targetOmsetData = [], realisasiOmsetData = [], tableRows = [];
 
             sortedKeys.forEach(key => {
                 const data = aggregation[key];
-                labels.push(`${monthShort[data.bulan - 1]}`);
+                labels.push(`${monthShort[data.bulan - 1] || '-'}`);
                 targetSiswaData.push(data.targetSiswa);
                 realisasiSiswaData.push(data.realSiswa);
                 targetOmsetData.push(data.targetOmset / 1000000); 
@@ -2975,7 +2995,7 @@
                 totalRealisasiOmset += data.realOmset;
 
                 tableRows.push({
-                    bulanName: daftarNamaBulan[data.bulan],
+                    bulanName: daftarNamaBulan[data.bulan] || '-',
                     tahun: data.tahun,
                     targetSiswa: data.targetSiswa,
                     realSiswa: data.realSiswa,
@@ -3010,7 +3030,7 @@
         function showEditTargetPeraihanForm(backendId) {
             const data = currentData.find(d => d.__backendId === backendId);
             if (!data) return;
-            renderTargetPeraihanForm(data.wilayah, data);
+            renderTargetPeraihanForm(data.wilayah || 'Bandung', data);
         }
 
         function renderTargetPeraihanForm(location, editData = null) {
@@ -3029,30 +3049,30 @@
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Program</label>
                                 <select name="program" id="tm-program" required class="w-full px-4 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Bulan</label>
                                 <select name="bulan" id="tm-bulan" required class="w-full px-4 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${isEdit ? (editData.bulan == idx+1 ? 'selected' : '') : (monthF == idx+1 ? 'selected' : '')}>${m || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Tahun</label>
                                 <select name="tahun" id="tm-tahun" required class="w-full px-4 py-2 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Tahun</option>
-                                    ${[2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035].map(y => `<option value="${y}" ${isEdit && editData.tahun == y ? 'selected' : ''}>${y}</option>`).join('')}
+                                    ${[2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035].map(y => `<option value="${y}" ${isEdit && editData.tahun == y ? 'selected' : ''}>${y || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="text-left">
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Target Jumlah Siswa</label>
-                                <input type="number" name="target_siswa" value="${isEdit ? editData.target_siswa : ''}" required min="0" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
+                                <input type="number" name="target_siswa" value="${isEdit ? (editData.target_siswa || '') : ''}" required min="0" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                             </div>
                             <div class="text-left">
                                 <label class="block text-gray-700 mb-2 text-sm font-bold">Target Omset</label>
-                                <input type="text" id="input-target-omset" name="target_omset" value="${isEdit ? parseInt(editData.target_omset).toLocaleString('id-ID') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
+                                <input type="text" id="input-target-omset" name="target_omset" value="${isEdit && editData.target_omset ? parseInt(editData.target_omset).toLocaleString('id-ID') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                             </div>
                         </div>
                         <div class="flex gap-4 mt-6">
@@ -3080,7 +3100,7 @@
                     );
 
                     if (isExist) {
-                        alert(`Data untuk Program ${prog} pada ${daftarNamaBulan[bln]} ${thn} sudah ada!`);
+                        alert(`Data untuk Program ${prog} pada ${daftarNamaBulan[bln] || '-'} ${thn} sudah ada!`);
                         return;
                     }
                 }
@@ -3091,7 +3111,7 @@
                     bulan: bln,
                     tahun: thn,
                     target_siswa: fd.get('target_siswa'),
-                    target_omset: fd.get('target_omset').replace(/\./g, '')
+                    target_omset: (fd.get('target_omset') || '0').replace(/\./g, '')
                 };
 
                 let result;
@@ -3190,7 +3210,7 @@
             const isAuthorized = (currentUser.role === 'super admin') || 
                                  (currentUser.role === 'admin' && (currentUser.wilayah === 'Semua' || currentUser.wilayah === location));
 
-            let filteredData = currentData.filter(d => d.module === 'data-leads' && d.wilayah === location);
+            let filteredData = currentData.filter(d => d.module === 'data-leads' && (d.wilayah || '').includes(location));
             
             const statusF = selectedStatusFilter || 'all';
             const progF = selectedProgramFilter || 'all';
@@ -3250,14 +3270,14 @@
                                 <select id="program-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
                                     <option value="all" ${progF === 'all' ? 'selected' : ''}>Semua Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${progF === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select id="month-filter-leads" onchange="applyLeadsFilter()" 
                                         class="px-3 py-2 rounded bg-white text-gray-800 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm font-['Poppins']">
                                     <option value="all" ${monthF === 'all' ? 'selected' : ''}>Semua Bulan</option>
-                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m}</option>`).join('')}
+                                    ${daftarNamaBulan.slice(1).map((m, idx) => `<option value="${idx+1}" ${monthF == idx+1 ? 'selected' : ''}>${m || '-'}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
@@ -3308,27 +3328,27 @@
                                 </thead>
                                 <tbody id="tbody-leads">
                                     ${filteredData.length === 0 ? `
-                                        <tr><td colspan="${isAuthorized ? '16' : '15'}" class="p-8 text-center text-blue-600 font-medium tracking-tight"></td></tr>
+                                        <tr><td colspan="${isAuthorized ? '16' : '15'}" class="p-8 text-center text-blue-600 font-medium tracking-tight">Belum ada data leads untuk periode ini</td></tr>
                                         ` : filteredData.map((lead, idx) => {
                                             const infoDari = Array.isArray(lead.info_villa_merah_dari) ? lead.info_villa_merah_dari.join(', ') : (lead.info_villa_merah_dari || '-');
-                                            const platform = Array.isArray(lead.platform_medsos) ? l.platform_medsos.join(', ') : (l.platform_medsos || '-');
+                                            const platform = Array.isArray(lead.platform_medsos) ? lead.platform_medsos.join(', ') : (lead.platform_medsos || '-');
                                             const isClosingStatus = lead.is_closing || lead.status_crm === 'Deal';
                                             return `
                                         <tr class="border-b border-blue-100 hover:bg-blue-50 text-gray-700 transition-colors ${isClosingStatus ? 'bg-emerald-50' : ''}">
                                             <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${idx + 1}</td>
-                                            <td class="p-2 text-left text-[10px] font-bold ${isClosingStatus ? 'text-emerald-700' : 'text-black'} uppercase tracking-tight" title="${lead.nama_siswa}">${lead.nama_siswa} ${isClosingStatus ? '✓' : ''}</td>
+                                            <td class="p-2 text-left text-[10px] font-bold ${isClosingStatus ? 'text-emerald-700' : 'text-black'} uppercase tracking-tight" title="${lead.nama_siswa || '-'}">${lead.nama_siswa || '-'} ${isClosingStatus ? '✓' : ''}</td>
                                             <td class="p-2 text-left text-[10px] font-semibold text-blue-800 uppercase tracking-tight" title="${lead.ttl || '-'}">${lead.ttl || '-'}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.nama_siswa}">${lead.asal_sekolah}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.asal_sekolah || '-'}">${lead.asal_sekolah || '-'}</td>
                                             <td class="p-2 text-center text-[10px] uppercase tracking-tighter font-mono">${lead.kelas || '-'}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tighter" title="${lead.alamat}">${lead.alamat}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase tracking-tight" title="${lead.asal_kota}">${lead.asal_kota || '-'}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tighter" title="${lead.alamat || '-'}">${lead.alamat || '-'}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase tracking-tight" title="${lead.asal_kota || '-'}">${lead.asal_kota || '-'}</td>
                                             <td class="p-2 text-left text-[10px] font-bold text-black uppercase tracking-tighter">${lead.program || '-'}</td>
                                             <td class="p-2 text-left">
-                                                <span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-[9px] font-bold uppercase whitespace-nowrap tracking-tighter">${platform}</span>
+                                                <span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-[9px] font-bold uppercase whitespace-nowrap tracking-tighter">${platform || '-'}</span>
                                             </td>
-                                            <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.nama_medsos}">${lead.nama_medsos}</td>
-                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tight" title="${infoDari}">${infoDari}</td>
-                                            <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${lead.no_hp}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase tracking-tighter" title="${lead.nama_medsos || '-'}">${lead.nama_medsos || '-'}</td>
+                                            <td class="p-2 text-left text-[10px] uppercase allow-wrap tracking-tight" title="${infoDari || '-'}">${infoDari || '-'}</td>
+                                            <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${lead.no_hp || '-'}</td>
                                             <td class="p-2 text-left text-[10px] uppercase tracking-tight">${lead.nama_ortu || '-'}</td>
                                             <td class="p-2 text-center text-[10px] font-mono">${lead.no_tlp_ortu || '-'}</td>
                                             <td class="p-2 text-center text-[10px] font-mono tracking-tighter">${formatTanggal(lead.tanggal_input || lead.createdAt)}</td>
@@ -3364,34 +3384,34 @@
         function showEditLeadsForm(backendId) {
             const data = currentData.find(d => d.__backendId === backendId);
             if (!data) return;
-            renderLeadsForm(data.wilayah, data);
+            renderLeadsForm(data.wilayah || 'Bandung', data);
         }
 
         function renderLeadsForm(location, editData = null) {
             const content = document.getElementById('main-content');
             const isEdit = !!editData;
             const allPrograms = getLeadsProgramsList();
-            const tglDefaultLeads = isEdit ? new Date(editData.tanggal_input || editData.createdAt).toISOString().split('T')[0] : '';
+            const tglDefaultLeads = isEdit && (editData.tanggal_input || editData.createdAt) ? new Date(editData.tanggal_input || editData.createdAt).toISOString().split('T')[0] : '';
 
             content.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl max-w-full mx-auto border border-blue-200 font-['Poppins']">
                     <h2 class="text-2xl font-bold text-blue-600 mb-6 uppercase text-left">${isEdit ? 'Edit' : 'Tambah'} Lead - ${location}</h2>
                     <form id="form-data-leads" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                            <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Siswa</label><input type="text" name="nama_siswa" value="${isEdit ? editData.nama_siswa : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
+                            <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Siswa</label><input type="text" name="nama_siswa" value="${isEdit ? (editData.nama_siswa || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Tempat Tanggal Lahir</label><input type="text" name="ttl" value="${isEdit ? (editData.ttl || '') : ''}" required placeholder="Misal: Bandung, 1 Januari 2008" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left">
                                 <label class="block text-sm font-bold mb-1">Program</label>
                                 <select name="program" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                                     <option value="">Pilih Program</option>
-                                    ${allPrograms.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog}</option>`).join('')}
+                                    ${allPrograms.map(prog => `<option value="${prog}" ${isEdit && editData.program === prog ? 'selected' : ''}>${prog || '-'}</option>`).join('')}
                                 </select>
                             </div>
-                            <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Sekolah</label><input type="text" name="asal_sekolah" value="${isEdit ? editData.asal_sekolah : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
+                            <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Sekolah</label><input type="text" name="asal_sekolah" value="${isEdit ? (editData.asal_sekolah || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Kelas</label><input type="text" name="kelas" value="${isEdit ? (editData.kelas || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Asal Kota/Kab</label><input type="text" name="asal_kota" value="${isEdit ? (editData.asal_kota || '') : ''}" required placeholder="Misal: Bandung" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
-                            <div class="text-left"><label class="block text-sm font-bold mb-1">No HP Siswa</label><input type="text" name="no_hp" value="${isEdit ? editData.no_hp : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
-                            <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Akun Medsos</label><input type="text" name="nama_medsos" value="${isEdit ? editData.nama_medsos : ''}" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
+                            <div class="text-left"><label class="block text-sm font-bold mb-1">No HP Siswa</label><input type="text" name="no_hp" value="${isEdit ? (editData.no_hp || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
+                            <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Akun Medsos</label><input type="text" name="nama_medsos" value="${isEdit ? (editData.nama_medsos || '') : ''}" class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             
                             <div class="text-left"><label class="block text-sm font-bold mb-1">Nama Orang Tua</label><input type="text" name="nama_ortu" value="${isEdit ? (editData.nama_ortu || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
                             <div class="text-left"><label class="block text-sm font-bold mb-1">No Telepon Orang Tua</label><input type="text" name="no_tlp_ortu" value="${isEdit ? (editData.no_tlp_ortu || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']"></div>
@@ -3402,7 +3422,7 @@
                             </div>
                             <div class="text-left">
                                 <label class="block text-sm font-bold mb-1">Alamat</label>
-                                <input type="text" name="alamat" value="${isEdit ? editData.alamat : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
+                                <input type="text" name="alamat" value="${isEdit ? (editData.alamat || '') : ''}" required class="w-full p-2 border rounded border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 font-['Poppins']">
                             </div>
                         </div>
 
@@ -3413,7 +3433,7 @@
                                     ${daftarSumberInfo.map(info => `
                                         <label class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1 rounded transition-colors text-[10px]">
                                             <input type="checkbox" name="info_villa_merah_dari" value="${info}" class="lead-info-checkbox h-3 w-3" ${isEdit && editData.info_villa_merah_dari?.includes(info) ? 'checked' : ''}>
-                                            <span class="whitespace-nowrap tracking-tight">${info}</span>
+                                            <span class="whitespace-nowrap tracking-tight">${info || '-'}</span>
                                         </label>`).join('')}
                                 </div>
                             </div>
@@ -3424,7 +3444,7 @@
                                     ${['Instagram','TikTok','Facebook','Twitter','YouTube','Lainnya'].map(p => `
                                         <label class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1 rounded transition-colors text-[10px]">
                                             <input type="checkbox" name="platform_medsos" value="${p}" class="lead-platform-checkbox h-3 w-3" ${isEdit && editData.platform_medsos?.includes(p) ? 'checked' : ''}>
-                                            <span class="whitespace-nowrap tracking-tight">${p}</span>
+                                            <span class="whitespace-nowrap tracking-tight">${p || '-'}</span>
                                         </label>`).join('')}
                                 </div>
                             </div>
@@ -3485,7 +3505,7 @@
         
         const dataHandler = {
             onDataChanged(data) {
-                currentData = data;
+                currentData = data || [];
                 renderContent();
             }
         };
@@ -3512,6 +3532,7 @@
             if (!m) return 0;
 
             const matches = currentData.filter(d => {
+                if(!d.createdAt) return false;
                 const dt = new Date(d.createdAt);
                 const isMonthMatch = (dt.getMonth() + 1) === m;
                 const yrF = selectedYear || 'all';
@@ -3525,6 +3546,7 @@
         function formatTanggal(dateStr) {
             if (!dateStr || dateStr === '-') return '-';
             const d = new Date(dateStr);
+            if(isNaN(d.getTime())) return '-';
             const day = d.getDate();
             const month = d.getMonth() + 1;
             const year = d.getFullYear();
