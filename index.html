@@ -1068,7 +1068,7 @@
                                     <span class="text-[10px] font-black text-blue-600 uppercase block mb-1">Total Leads</span>
                                     <span class="text-2xl font-black text-blue-900">${totalLeads}</span>
                                 </div>
-                                <div class="bg-emerald-50 p-4 rounded-2xl text-center border border-emerald-100">
+                                <div class="bg-emerald-50 p-4 rounded-2xl text-center border-emerald-100">
                                     <span class="text-[10px] font-black text-emerald-600 uppercase block mb-1">Closing</span>
                                     <span class="text-2xl font-black text-blue-900">${totalClosing}</span>
                                 </div>
@@ -2806,7 +2806,7 @@
                                         <th>BULAN</th>
                                         <th class="bg-blue-700">Target Siswa</th>
                                         <th>SISWA TERCAPAI</th>
-                                        <th class="bg-rose-700">BELUM TERCAPAI</th>
+                                        <th class="bg-rose-700">SELISIH/KELEBIHAN</th>
                                         <th class="bg-blue-700">Target Omset</th>
                                         <th>OMSET TERCAPAI</th>
                                         <th class="bg-rose-700">SELISIH/KELEBIHAN</th>
@@ -2822,12 +2822,13 @@
                                         const siswaGap = row.targetSiswa - row.realSiswa;
                                         const omsetGapRaw = row.targetOmset - row.realOmset;
                                         const isSurplusRow = omsetGapRaw < 0;
+                                        const isSurplusSiswaRow = siswaGap < 0;
 
                                         let teksOmsetRow = isSurplusRow 
                                             ? "<span class='text-blue-600 font-bold'>+Rp " + Math.abs(omsetGapRaw).toLocaleString('id-ID') + "</span>" 
                                             : "<span class='text-rose-600'>Rp " + Math.abs(omsetGapRaw).toLocaleString('id-ID') + "</span>";
 
-                                        let teksSiswaRow = (siswaGap <= 0) 
+                                        let teksSiswaRow = isSurplusSiswaRow 
                                             ? "<span class='text-blue-600 font-bold'>+" + Math.abs(siswaGap) + "</span>" 
                                             : "<span class='text-rose-600'>" + siswaGap + "</span>";
 
@@ -2857,10 +2858,10 @@
                                         <td colspan="3" class="p-2 text-center text-xs uppercase font-extrabold">GRAND TOTAL</td>
                                         <td class="p-2 text-center text-xs text-blue-700 bg-blue-50 font-mono">${totalTgtSiswa}</td>
                                         <td class="p-2 text-center text-xs text-green-700 font-mono">${totalRelSiswa}</td>
-                                        <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono">${totalSiswaGap <= 0 ? '+' + Math.abs(totalSiswaGap) : totalSiswaGap}</td>
+                                        <td class="p-2 text-center text-xs bg-rose-100 font-mono">${totalSiswaGap <= 0 ? "<span class='text-blue-700'>+" + Math.abs(totalSiswaGap) + "</span>" : "<span class='text-rose-700'>" + totalSiswaGap + "</span>"}</td>
                                         <td class="p-2 text-center text-xs text-purple-700 bg-blue-50 font-mono tracking-tighter">${formatRupiah(totalTgtOmset)}</td>
                                         <td class="p-2 text-center text-xs text-emerald-700 font-mono tracking-tighter">${formatRupiah(totalRelOmset)}</td>
-                                        <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono tracking-tighter">${totalOmsetGap <= 0 ? '+Rp ' + Math.abs(totalOmsetGap).toLocaleString('id-ID') : formatRupiah(totalOmsetGap)}</td>
+                                        <td class="p-2 text-center text-xs bg-rose-100 font-mono tracking-tighter">${totalOmsetGap <= 0 ? "<span class='text-blue-700'>+Rp " + Math.abs(totalOmsetGap).toLocaleString('id-ID') + "</span>" : "<span class='text-rose-700'>" + formatRupiah(totalOmsetGap) + "</span>"}</td>
                                         ${progF !== 'all' && isAuthorized ? '<td class="bg-slate-100"></td>' : ''}
                                     </tr>
                                 </tfoot>
