@@ -194,7 +194,6 @@
             return [...new Set(programDatabase)].sort();
         }
 
-        // PERBAIKAN: Inisialisasi default agar tidak undefined
         let selectedProgramFilter = 'all';
         let selectedYearFilter = new Date().getFullYear().toString(); 
         let selectedMonthFilter = (new Date().getMonth() + 1).toString(); 
@@ -385,6 +384,7 @@
             saveLog(`Ekspor data ${moduleName} wilayah ${location}`);
         }
 
+        // PERBAIKAN: Fungsi Impor yang otomatis mencocokkan program
         function triggerImport(moduleName, location) {
             const input = document.createElement('input');
             input.type = 'file';
@@ -400,12 +400,15 @@
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(firstSheet);
                     
-                    if (confirm(`Impor ${jsonData.length} data ke ${moduleName}?`)) {
+                    if (confirm(`Impor ${jsonData.length} data ke ${moduleName}? Sistem akan otomatis mencocokkan kolom PROGRAM.`)) {
                         jsonData.forEach(row => {
                             let mapped = { 
                                 __backendId: Date.now().toString() + Math.random(),
                                 module: moduleName
                             };
+
+                            // Fungsi Helper pembersih teks untuk pencocokan program
+                            const cleanStr = (str) => str ? str.toString().trim().toUpperCase() : '';
 
                             if (moduleName === 'data-siswa') {
                                 mapped.location = location;
@@ -415,7 +418,12 @@
                                 mapped.kelas = row["KELAS"] || '';
                                 mapped.alamat_siswa = row["ALAMAT"] || '';
                                 mapped.asal_kota = row["KOTA/KAB ASAL"] || '';
-                                mapped.program = row["PROGRAM"] || '';
+                                
+                                // AUTO MAPPING PROGRAM (SISWA)
+                                const excelProg = cleanStr(row["PROGRAM"]);
+                                const matchedProg = programDatabase.find(p => cleanStr(p) === excelProg);
+                                mapped.program = matchedProg || (row["PROGRAM"] || '-');
+
                                 mapped.platform_medsos = row["MEDIA SOSIAL"] ? row["MEDIA SOSIAL"].split(', ') : [];
                                 mapped.nama_medsos = row["NAMA AKUN"] || '';
                                 mapped.info_villa_merah_dari = row["INFORMASI VILLA MERAH DARI"] ? row["INFORMASI VILLA MERAH DARI"].split(', ') : [];
@@ -433,7 +441,10 @@
                                 mapped.kelas = row["KELAS"] || '';
                                 mapped.alamat = row["ALAMAT"] || '';
                                 mapped.asal_kota = row["KOTA/KAB ASAL"] || '';
-                                mapped.program = row["INFO PROGRAM"] || '';
+                                
+                                // AUTO MAPPING PROGRAM (LEADS)
+                                mapped.program = row["INFO PROGRAM"] || '-';
+
                                 mapped.platform_medsos = row["MEDIA SOSIAL"] ? row["MEDIA SOSIAL"].split(', ') : [];
                                 mapped.nama_medsos = row["NAMA AKUN"] || '';
                                 mapped.info_villa_merah_dari = row["INFORMASI VILLA MERAH DARI"] ? row["INFORMASI VILLA MERAH DARI"].split(', ') : [];
@@ -448,7 +459,7 @@
                         
                         localStorage.setItem('vmi_app_data', JSON.stringify(currentData));
                         saveLog(`Berhasil impor ${jsonData.length} data ${moduleName}`);
-                        alert("Data Berhasil Diimpor Sesuai Kolom Tabel!");
+                        alert("Data Berhasil Diimpor! Kolom Program telah disinkronkan secara otomatis.");
                         renderContent();
                     }
                 };
@@ -608,7 +619,6 @@
                                 ${userDatabase.map((u, idx) => {
                                     let isProtected = false;
                                     
-                                    // Logika Proteksi: Admin tidak bisa edit Admin (termasuk dirinya) dan Super Admin
                                     if (currentUser.role === 'admin') {
                                         if (u.role === 'super admin' || u.role === 'admin') {
                                             isProtected = true;
@@ -654,14 +664,12 @@
             
             let isRestricted = false;
             
-            // Proteksi di level Form: Admin tidak bisa edit Admin (termasuk dirinya) dan Super Admin
             if (currentUser.role === 'admin' && editData) {
                 if (editData.role === 'super admin' || editData.role === 'admin') {
                     isRestricted = true;
                 }
             }
 
-            // Default tampilan wilayah (sembunyi jika role user)
             const initialRole = isEdit ? editData.role : 'user';
             const hideWilayahClass = initialRole === 'user' ? 'hidden' : '';
 
@@ -709,7 +717,6 @@
                 </div>`;
         }
 
-        // Fungsi kontrol show/hide wilayah di Manajemen User
         function toggleWilayahInput() {
             const role = document.getElementById('n-role').value;
             const container = document.getElementById('container-wilayah');
@@ -905,12 +912,10 @@
             `).join('');
         }
         
-        // PERBAIKAN: Fungsi navigasi agar filter tidak undefined
         function navigateTo(module, submodule = '') {
             currentModule = module;
             currentSubModule = submodule || '';
             
-            // Set default value jika filter bernilai undefined
             selectedProgramFilter = selectedProgramFilter || 'all';
             selectedStatusFilter = selectedStatusFilter || 'all'; 
             
@@ -975,7 +980,6 @@
             
             let leadsDataFiltered = [...allLeadsInWilayah];
             
-            // Pengaman undefined pada filter
             const progF = selectedProgramFilter || 'all';
             const monthF = selectedMonthFilter || 'all';
             const yearF = selectedYearFilter || 'all';
@@ -1054,7 +1058,7 @@
                                         r="70" cx="96" cy="96" />
                                 </svg>
                                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                    <span class="text-4xl font-black ${colorClass} tracking-tighter leading-none">${conversionRate}%</span>
+                                    <span class="text-4xl font-black ${colorClass} tracking-tighter Kalimat leading-none">${conversionRate}%</span>
                                     <p class="text-[9px] text-gray-400 uppercase font-black mt-1">Siswa Closing</p>
                                 </div>
                             </div>
@@ -1525,7 +1529,6 @@
                 });
             }
             
-            // Dashboard mengabaikan filter bulan
             const olapData = generateOLAPFromData(dataSiswa, true);
 
             let targetMarketData = currentData.filter(d => d.module === 'target-market');
@@ -1535,8 +1538,15 @@
             const totalTargetOmset = targetMarketData.reduce((acc, curr) => acc + (parseFloat(curr.target_omset) || 0), 0);
             
             const omsetTercapai = olapData.summary.totalOmsetRaw;
-            const omsetBelumTercapai = totalTargetOmset - omsetTercapai;
+            const omsetBelumTercapaiRaw = totalTargetOmset - omsetTercapai;
             
+            let teksOmsetGapDash;
+            if (omsetBelumTercapaiRaw < 0) {
+                teksOmsetGapDash = "+Rp " + Math.abs(omsetBelumTercapaiRaw).toLocaleString('id-ID');
+            } else {
+                teksOmsetGapDash = "Rp " + Math.abs(omsetBelumTercapaiRaw).toLocaleString('id-ID');
+            }
+
             const persentasePencapaian = totalTargetOmset > 0 
                 ? ((omsetTercapai / totalTargetOmset) * 100).toFixed(1) 
                 : 0;
@@ -1571,7 +1581,7 @@
 
                     <div class="lg:col-span-2 bg-amber-600 rounded-2xl p-6 shadow-xl text-center">
                         <h3 class="text-amber-50 text-xs font-black mb-2 uppercase tracking-widest">Omset Belum Tercapai</h3>
-                        <div class="text-3xl font-bold text-white break-words" id="omset-gap-card">${formatRupiahFull(omsetBelumTercapai)}</div>
+                        <div class="text-3xl font-bold text-white break-words" id="omset-gap-card">${teksOmsetGapDash}</div>
                         <div class="text-[10px] text-amber-100 mt-2 font-bold uppercase">Kekurangan: ${Math.max(0, (100 - persentasePencapaian)).toFixed(1)}%</div>
                     </div>
                     
@@ -1631,13 +1641,13 @@
         
         function formatRupiah(value) {
             if (!value) return 'Rp 0';
-            const num = parseInt(value);
+            const num = Math.abs(parseInt(value));
             return `Rp ${num.toLocaleString('id-ID')}`;
         }
 
         function formatRupiahFull(value) {
             if (!value) return 'Rp 0';
-            const num = parseFloat(value);
+            const num = Math.abs(parseFloat(value));
             return `Rp ${num.toLocaleString('id-ID')}`;
         }
         
@@ -2615,7 +2625,14 @@
 
             const targetOmsetModul = chartData.summary.totalTargetOmsetRaw;
             const omsetRealisasiModul = chartData.summary.totalRealisasiOmsetRaw;
-            const omsetGapModul = targetOmsetModul - omsetRealisasiModul;
+            
+            const selisihOmsetModul = targetOmsetModul - omsetRealisasiModul;
+            let teksOmsetGap;
+            if (selisihOmsetModul < 0) {
+                teksOmsetGap = "+Rp " + Math.abs(selisihOmsetModul).toLocaleString('id-ID');
+            } else {
+                teksOmsetGap = "Rp " + Math.abs(selisihOmsetModul).toLocaleString('id-ID');
+            }
 
             const content = document.getElementById('main-content');
             
@@ -2715,7 +2732,7 @@
                         </div>
                         <div class="flex-[2] min-w-[200px] bg-amber-600 text-white p-5 rounded-xl shadow-lg text-center">
                             <div class="text-[10px] font-black uppercase text-amber-100 tracking-tighter">Omset Belum Tercapai</div>
-                            <div class="text-2xl font-bold mt-1 break-words">${formatRupiahFull(omsetGapModul)}</div>
+                            <div class="text-2xl font-bold mt-1 break-words">${teksOmsetGap}</div>
                         </div>
                         <div class="flex-1 min-w-[120px] bg-[#FFC107] text-blue-900 p-4 rounded-xl shadow-lg text-center flex flex-col justify-center">
                             <div class="text-[10px] font-black uppercase text-blue-900/80 tracking-tighter whitespace-nowrap">Target Siswa</div>
@@ -2799,7 +2816,14 @@
                                         </td></tr>
                                     ` : chartData.tableRows.map((row, idx) => {
                                         const siswaGap = row.targetSiswa - row.realSiswa;
-                                        const omsetGap = row.targetOmset - row.realOmset;
+                                        const omsetGapRaw = row.targetOmset - row.realOmset;
+                                        let teksOmsetRow;
+                                        if (omsetGapRaw < 0) {
+                                            teksOmsetRow = "+Rp " + Math.abs(omsetGapRaw).toLocaleString('id-ID');
+                                        } else {
+                                            teksOmsetRow = "Rp " + Math.abs(omsetGapRaw).toLocaleString('id-ID');
+                                        }
+
                                         return `
                                         <tr class="border-b border-blue-100 hover:bg-blue-50 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} text-gray-700">
                                             <td class="p-2 text-center text-xs font-mono">${idx + 1}</td> 
@@ -2810,7 +2834,7 @@
                                             <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono">${Math.max(0, siswaGap)}</td>
                                             <td class="p-2 text-center text-xs font-semibold text-purple-600 uppercase bg-blue-50/50 font-mono tracking-tighter">${formatRupiah(row.targetOmset)}</td>
                                             <td class="p-2 text-center text-xs font-bold text-emerald-600 uppercase font-mono tracking-tighter">${formatRupiah(row.realOmset)}</td>
-                                            <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono tracking-tighter">${formatRupiah(Math.max(0, omsetGap))}</td>
+                                            <td class="p-2 text-center text-xs font-bold text-rose-600 uppercase bg-rose-50 font-mono tracking-tighter">${teksOmsetRow}</td>
                                             ${progF !== 'all' && isAuthorized ? `
                                             <td class="p-2 text-center text-xs sticky right-0 bg-white col-aksi shadow-[-4px_0_6px_rgba(0,0,0,0.05)]">
                                                 <div class="flex flex-row justify-center gap-2 items-center">
@@ -2829,7 +2853,7 @@
                                         <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono">${Math.max(0, totalSiswaGap)}</td>
                                         <td class="p-2 text-center text-xs text-purple-700 bg-blue-50 font-mono tracking-tighter">${formatRupiah(totalTgtOmset)}</td>
                                         <td class="p-2 text-center text-xs text-emerald-700 font-mono tracking-tighter">${formatRupiah(totalRelOmset)}</td>
-                                        <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono tracking-tighter">${formatRupiah(Math.max(0, totalOmsetGap))}</td>
+                                        <td class="p-2 text-center text-xs text-rose-700 bg-rose-100 font-mono tracking-tighter">${formatRupiah(totalOmsetGap)}</td>
                                         ${progF !== 'all' && isAuthorized ? '<td class="bg-slate-100"></td>' : ''}
                                     </tr>
                                 </tfoot>
@@ -3134,30 +3158,13 @@
                     data: {
                         labels: chartData.labels,
                         datasets: [
-                            { 
-                                label: 'Target Siswa', 
-                                data: chartData.targetSiswaData, 
-                                backgroundColor: '#FFC107', 
-                                borderRadius: 5 
-                            },
-                            { 
-                                label: 'Siswa Tercapai', 
-                                data: chartData.realisasiSiswaData, 
-                                backgroundColor: '#6366f1', 
-                                borderRadius: 5 
-                            }
+                            { label: 'Target Siswa', data: chartData.targetSiswaData, backgroundColor: '#FFC107', borderRadius: 5 },
+                            { label: 'Siswa Tercapai', data: chartData.realisasiSiswaData, backgroundColor: '#6366f1', borderRadius: 5 }
                         ]
                     },
                     options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        plugins: { 
-                            legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } 
-                        },
-                        scales: {
-                            x: { ticks: { font: { family: 'Poppins' } } },
-                            y: { beginAtZero: true, ticks: { font: { family: 'Poppins' } } }
-                        }
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } }
                     }
                 });
             }
@@ -3169,36 +3176,13 @@
                     data: {
                         labels: chartData.labels,
                         datasets: [
-                            { 
-                                label: 'Target Omset (Juta)', 
-                                data: chartData.targetOmsetData, 
-                                backgroundColor: '#1e3a8a', 
-                                borderRadius: 5 
-                            },
-                            { 
-                                label: 'Omset Tercapai (Juta)', 
-                                data: chartData.realisasiOmsetData, 
-                                backgroundColor: '#059669', 
-                                borderRadius: 5 
-                            }
+                            { label: 'Target Omset (Juta)', data: chartData.targetOmsetData, backgroundColor: '#1e3a8a', borderRadius: 5 },
+                            { label: 'Omset Tercapai (Juta)', data: chartData.realisasiOmsetData, backgroundColor: '#059669', borderRadius: 5 }
                         ]
                     },
                     options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        plugins: { 
-                            legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } 
-                        },
-                        scales: {
-                            x: { ticks: { font: { family: 'Poppins' } } },
-                            y: { 
-                                beginAtZero: true, 
-                                ticks: { 
-                                    font: { family: 'Poppins' },
-                                    callback: function(value) { return value + ' Jt'; }
-                                } 
-                            }
-                        }
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11, weight: 'bold' } } } }
                     }
                 });
             }
@@ -3359,8 +3343,7 @@
                                                     <button onclick="deleteData('${lead.__backendId}')" class="text-red-600 hover:text-red-700 font-bold uppercase text-[9px]">HAPUS</button>
                                                 </div>
                                             </td>` : ''}
-                                        </tr>
-                                    `}).join('')}
+                                        </tr>`}).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -3526,31 +3509,11 @@
             initializeApp();
         }
 
-        function formatTanggalRaw(label) {
-            const mapSingkatan = { 'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'Mei': 5, 'Jun': 6, 'Jul': 7, 'Agu': 8, 'Sep': 9, 'Okt': 10, 'Nov': 11, 'Des': 12 };
-            const m = mapSingkatan[label];
-            if (!m) return 0;
-
-            const matches = currentData.filter(d => {
-                if(!d.createdAt) return false;
-                const dt = new Date(d.createdAt);
-                const isMonthMatch = (dt.getMonth() + 1) === m;
-                const yrF = selectedYear || 'all';
-                const isYearMatch = yrF === 'all' || dt.getFullYear() == yrF;
-                return d.module === 'data-siswa' && isMonthMatch && isYearMatch;
-            });
-
-            return matches.reduce((acc, curr) => acc + (parseFloat(curr.biaya_pendidikan || 0) - parseFloat(curr.sisa_angsuran || 0)), 0);
-        }
-
         function formatTanggal(dateStr) {
             if (!dateStr || dateStr === '-') return '-';
             const d = new Date(dateStr);
             if(isNaN(d.getTime())) return '-';
-            const day = d.getDate();
-            const month = d.getMonth() + 1;
-            const year = d.getFullYear();
-            return `${day}/${month}/${year}`;
+            return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
     </script>
  </body>
